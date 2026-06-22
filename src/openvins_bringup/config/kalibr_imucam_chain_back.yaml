@@ -1,0 +1,24 @@
+%YAML:1.0
+
+# cam1's fisheye1 relative to cam1's OWN IMU.
+# Since both T265s are the same model, the internal geometry
+# (fisheye ↔ IMU) is nearly identical. We use cam0's T_cam_imu
+# as approximation and let OpenVINS refine it online.
+# Intrinsics and distortion are cam1's own factory calibration.
+
+cam0:
+  T_cam_imu:
+    - [-0.9998761771972654, 0.002831174545748783, 0.015479493663382282, 0.009847737933630705]
+    - [-0.0029326606695474597, -0.999974330610803, -0.0065374016913607265, 0.004044777973851876]
+    - [0.015460587788970944, -0.006581988314211809, 0.9998588138607628, -0.015241042987496874]
+    - [0.0, 0.0, 0.0, 1.0]
+  cam_overlaps: []
+  camera_model: pinhole
+  distortion_coeffs: [-0.0028480208540388407, 0.05429895807264252, -0.0516469474707301, 0.010954064142332987]
+  distortion_model: equidistant
+  intrinsics: [281.49219856329046, 280.3289056204996, 414.09933409091184, 406.02198481912353]
+  resolution: [848, 800]
+  rostopic: /t265/fisheye1/image_raw
+  timeshift_cam_imu: 0.005583860066266795
+
+
