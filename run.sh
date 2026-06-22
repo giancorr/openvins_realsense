@@ -21,6 +21,7 @@ echo ""
 docker run -it --rm \
     --privileged \
     -v /dev:/dev \
+    -v /run/udev:/run/udev:ro \
     -e DISPLAY=$DISPLAY \
     -v /tmp/.X11-unix:/tmp/.X11-unix \
     -e QT_X11_NO_MITSHM=1 \
