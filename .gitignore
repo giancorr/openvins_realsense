@@ -1,0 +1,15 @@
+# ROS2 Build and Log folders
+build/
+install/
+log/
+.vscode/
+
+# Python Cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# OS specific
+.DS_Store
+Thumbs.db
