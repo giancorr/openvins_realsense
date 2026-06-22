@@ -12,8 +12,9 @@ echo "Once inside the container, run:"
 echo "  1. cd /root/ros2_ws && colcon build --packages-select odometry_tracker openvins_bringup"
 echo "  2. source install/setup.bash"
 echo ""
-echo "  SINGLE mode:  tmuxp load /run_config/session.yml"
-echo "  DUAL mode:    tmuxp load /run_config/dual_session.yml"
+echo "  SINGLE (no EKF):   tmuxp load /run_config/utils/session.yml"
+echo "  SINGLE (with EKF): tmuxp load /run_config/utils/single_ekf_session.yml"
+echo "  DUAL (with EKF):   tmuxp load /run_config/utils/dual_session.yml"
 echo ""
 
 # Run the docker container
