@@ -37,34 +37,30 @@ public:
             std::bind(&OdomToBaselink::back_callback, this, std::placeholders::_1));
 
         // Static transform: cam0 IMU -> base_link
-        // T_cam0_base = T_base_cam0^-1
-        tf2::Quaternion q_front(-1.0, 0.0, 0.0, 0.0);
+        tf2::Quaternion q_front(0.5047690, -0.4984747, 0.4937537, 0.5029300);
         T_imu_front_base_.setRotation(q_front);
-        T_imu_front_base_.setOrigin(tf2::Vector3(-0.12, 0.0, 0.14));
+        T_imu_front_base_.setOrigin(tf2::Vector3(0.008649, 0.144703, -0.103955));
 
         // Static transform: cam1 IMU -> base_link
-        // T_cam1_base = T_base_cam1^-1
-        tf2::Quaternion q_back(0.0, -0.9659258, 0.0, 0.2588190);
+        tf2::Quaternion q_back(0.3567783, -0.3462856, 0.6116574, 0.6153622);
         T_imu_back_base_.setRotation(q_back);
-        T_imu_back_base_.setOrigin(tf2::Vector3(-0.029904, 0.0, 0.248205));
+        T_imu_back_base_.setOrigin(tf2::Vector3(-0.010360, 0.252312, -0.206836));
 
-        // Static transform: global (ENU) -> global_ned (NED)
-        // q=[1, 0, 0, 0] to align base_link with global_ned
-        tf2::Quaternion q_global_ned(1.0, 0.0, 0.0, 0.0);
-        T_global_globalned_.setRotation(q_global_ned);
-        T_global_globalned_.setOrigin(tf2::Vector3(0.0, 0.0, 0.0));
+        // Static transform: global -> global_ned 
+        // This is exactly the same rotation as imu -> base_link to perfectly preserve orientation!
+        tf2::Quaternion q_global_ned_front(0.5047690, -0.4984747, 0.4937537, 0.5029300);
+        T_global_globalned_front_.setRotation(q_global_ned_front);
+        T_global_globalned_front_.setOrigin(tf2::Vector3(0.0, 0.0, 0.0));
 
+        tf2::Quaternion q_global_ned_back(0.3567783, -0.3462856, 0.6116574, 0.6153622);
+        T_global_globalned_back_.setRotation(q_global_ned_back);
+        T_global_globalned_back_.setOrigin(tf2::Vector3(0.0, 0.0, 0.0));
 
         RCLCPP_INFO(this->get_logger(),
             "odom_to_baselink started: transforming IMU odometries to base_link in global_ned");
     }
 
 private:
-    bool first_front_ = true;
-    tf2::Transform T_yaw_corr_front_;
-
-    bool first_back_ = true;
-    tf2::Transform T_yaw_corr_back_;
     void front_callback(const nav_msgs::msg::Odometry::SharedPtr msg)
     {
         tf2::Transform T_ovglobal_imu;
@@ -76,23 +72,7 @@ private:
 
         tf2::Transform T_raw = T_ovglobal_imu * T_imu_front_base_;
 
-        if (first_front_) {
-            double roll, pitch, yaw;
-            T_raw.getBasis().getRPY(roll, pitch, yaw);
-            T_yaw_corr_front_.setRotation(tf2::Quaternion(tf2::Vector3(0, 0, 1), -yaw));
-            
-            // Cancel the initial translation so base_link starts exactly at (0,0,0)
-            tf2::Vector3 t_r = T_raw.getOrigin();
-            tf2::Matrix3x3 R_c(T_yaw_corr_front_.getRotation());
-            tf2::Vector3 t_c = -(R_c * t_r);
-            T_yaw_corr_front_.setOrigin(t_c);
-            
-            first_front_ = false;
-            RCLCPP_INFO(this->get_logger(), "FRONT yaw correction applied: %f rad, translation canceled", -yaw);
-        }
-
-        tf2::Transform T_globalned_base = T_yaw_corr_front_ * T_raw;
-        tf2::Transform T_global_base = T_global_globalned_ * T_globalned_base;
+        tf2::Transform T_global_base = T_global_globalned_front_ * T_raw;
 
         auto out = build_output_msg(msg, T_global_base, T_imu_front_base_);
         pub_front_->publish(out);
@@ -109,23 +89,7 @@ private:
 
         tf2::Transform T_raw = T_ovglobal_imu * T_imu_back_base_;
 
-        if (first_back_) {
-            double roll, pitch, yaw;
-            T_raw.getBasis().getRPY(roll, pitch, yaw);
-            T_yaw_corr_back_.setRotation(tf2::Quaternion(tf2::Vector3(0, 0, 1), -yaw));
-            
-            // Cancel the initial translation so base_link starts exactly at (0,0,0)
-            tf2::Vector3 t_r = T_raw.getOrigin();
-            tf2::Matrix3x3 R_c(T_yaw_corr_back_.getRotation());
-            tf2::Vector3 t_c = -(R_c * t_r);
-            T_yaw_corr_back_.setOrigin(t_c);
-            
-            first_back_ = false;
-            RCLCPP_INFO(this->get_logger(), "BACK yaw correction applied: %f rad, translation canceled", -yaw);
-        }
-
-        tf2::Transform T_globalned_base = T_yaw_corr_back_ * T_raw;
-        tf2::Transform T_global_base = T_global_globalned_ * T_globalned_base;
+        tf2::Transform T_global_base = T_global_globalned_back_ * T_raw;
 
         auto out = build_output_msg(msg, T_global_base, T_imu_back_base_);
         pub_back_->publish(out);
