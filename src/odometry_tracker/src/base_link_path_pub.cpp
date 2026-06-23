@@ -3,6 +3,9 @@
 #include <nav_msgs/msg/path.hpp>
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_listener.h>
+#include <tf2/LinearMath/Transform.h>
+#include <tf2/LinearMath/Quaternion.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
 class BaseLinkPathPublisher : public rclcpp::Node
 {
@@ -32,13 +35,31 @@ private:
             return;
         }
 
+        tf2::Transform T_global_base;
+        tf2::fromMsg(transform.transform, T_global_base);
+
+        if (first_) {
+            double roll, pitch, yaw;
+            T_global_base.getBasis().getRPY(roll, pitch, yaw);
+            yaw_offset_ = yaw;
+            first_ = false;
+        }
+
+        // Apply yaw offset to rotate global_ned so that initial base_link X is aligned with global_ned X
+        tf2::Quaternion q_rot;
+        q_rot.setRPY(0, 0, -yaw_offset_);
+        tf2::Transform T_rot(q_rot, tf2::Vector3(0, 0, 0));
+        
+        tf2::Transform T_corrected = T_rot * T_global_base;
+
         geometry_msgs::msg::PoseStamped pose;
         pose.header.stamp = this->get_clock()->now();
         pose.header.frame_id = "global_ned";
-        pose.pose.position.x = transform.transform.translation.x;
-        pose.pose.position.y = transform.transform.translation.y;
-        pose.pose.position.z = transform.transform.translation.z;
-        pose.pose.orientation = transform.transform.rotation;
+        pose.pose.position.x = T_corrected.getOrigin().x();
+        pose.pose.position.y = T_corrected.getOrigin().y();
+        pose.pose.position.z = T_corrected.getOrigin().z();
+        
+        pose.pose.orientation = tf2::toMsg(T_corrected.getRotation());
 
         path_msg_.poses.push_back(pose);
         path_msg_.header.stamp = transform.header.stamp;
@@ -52,6 +73,8 @@ private:
     std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
     nav_msgs::msg::Path path_msg_;
     rclcpp::TimerBase::SharedPtr timer_;
+    bool first_ = true;
+    double yaw_offset_ = 0.0;
 };
 
 int main(int argc, char **argv)

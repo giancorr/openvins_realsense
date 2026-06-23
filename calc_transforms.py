@@ -1,60 +1,85 @@
 import math
+import numpy as np
+from scipy.spatial.transform import Rotation as R
 
-def euler_to_quaternion(yaw, pitch, roll):
-    cy = math.cos(yaw * 0.5)
-    sy = math.sin(yaw * 0.5)
-    cp = math.cos(pitch * 0.5)
-    sp = math.sin(pitch * 0.5)
-    cr = math.cos(roll * 0.5)
-    sr = math.sin(roll * 0.5)
-    w = cr * cp * cy + sr * sp * sy
-    x = sr * cp * cy - cr * sp * sy
-    y = cr * sp * cy + sr * cp * sy
-    z = cr * cp * sy - sr * sp * cy
-    return [x, y, z, w]
+# 1. We define base_link -> cam0_link such that X_base(Fwd) = Z_cam0, Y_base(Right) = X_cam0, Z_base(Down) = Y_cam0
+# This maps FRD to OpenCV.
+# Matrix from base_link to cam0:
+# [P_cam0] = R_cam0_base * [P_base]
+R_cam0_base = np.array([
+    [0, 1, 0],
+    [0, 0, 1],
+    [1, 0, 0]
+])
+# Translation base_link -> cam0 is [0.12, 0.0, 0.14] in base_link frame.
+# So T_cam0_base has translation -R_cam0_base * t_base_cam0 = - [0, 0.14, 0.12]
+t_base_cam0 = np.array([0.12, 0.0, 0.14])
 
-def quaternion_multiply(q1, q2):
-    x1, y1, z1, w1 = q1
-    x2, y2, z2, w2 = q2
-    return [
-        w1*x2 + x1*w2 + y1*z2 - z1*y2,
-        w1*y2 - x1*z2 + y1*w2 + z1*x2,
-        w1*z2 + x1*y2 - y1*x2 + z1*w2,
-        w1*w2 - x1*x2 - y1*y2 - z1*z2
-    ]
+# Let's get the quaternion for base_link -> cam0_link
+q_cam0_base = R.from_matrix(R_cam0_base).as_quat()
+print(f"base_link -> cam0_link (FRD to OpenCV):")
+print(f"Translation: {t_base_cam0[0]:.6f} {t_base_cam0[1]:.6f} {t_base_cam0[2]:.6f}")
+print(f"Quaternion: {q_cam0_base[0]:.7f} {q_cam0_base[1]:.7f} {q_cam0_base[2]:.7f} {q_cam0_base[3]:.7f}")
 
-def invert_transform(tx, ty, tz, qx, qy, qz, qw):
-    q_inv = [-qx, -qy, -qz, qw]
-    w, x, y, z = qw, -qx, -qy, -qz
-    R11 = 1 - 2*y**2 - 2*z**2
-    R12 = 2*x*y - 2*z*w
-    R13 = 2*x*z + 2*y*w
-    R21 = 2*x*y + 2*z*w
-    R22 = 1 - 2*x**2 - 2*z**2
-    R23 = 2*y*z - 2*x*w
-    R31 = 2*x*z - 2*y*w
-    R32 = 2*y*z + 2*x*w
-    R33 = 1 - 2*x**2 - 2*y**2
-    rx = R11*(-tx) + R12*(-ty) + R13*(-tz)
-    ry = R21*(-tx) + R22*(-ty) + R23*(-tz)
-    rz = R31*(-tx) + R32*(-ty) + R33*(-tz)
-    return rx, ry, rz, q_inv
+# 2. Kalibr gives us T_cam0_imu, which maps points from imu to cam0
+# [P_cam0] = R_cam0_imu * [P_imu] + t_cam0_imu
+T_cam0_imu = np.array([
+    [-0.9998761771972654, 0.002831174545748783, 0.015479493663382282, 0.009847737933630705],
+    [-0.0029326606695474597, -0.999974330610803, -0.0065374016913607265, 0.004044777973851876],
+    [0.015460587788970944, -0.006581988314211809, 0.9998588138607628, -0.015241042987496874],
+    [0.0, 0.0, 0.0, 1.0]
+])
 
-# The correct mapping from FRD to T265 IMU (X Fwd, Y Left, Z Up)
-# This is a 180 degree rotation around X!
-q_frd_to_imu = [1.0, 0.0, 0.0, 0.0]
+# We need imu -> base_link for TF publisher.
+# This means we need T_base_imu.
+# T_cam0_base * T_base_imu = T_cam0_imu
+# Therefore: T_base_imu = (T_cam0_base)^-1 * T_cam0_imu = T_base_cam0 * T_cam0_imu
 
-print("=== FRONT CAM (cam0) ===")
-tx_f, ty_f, tz_f = 0.12, 0.0, 0.14
-q_f = q_frd_to_imu
-print(f"base_link -> cam: {tx_f} {ty_f} {tz_f} {q_f[0]:.7f} {q_f[1]:.7f} {q_f[2]:.7f} {q_f[3]:.7f}")
-inv_tx_f, inv_ty_f, inv_tz_f, inv_q_f = invert_transform(tx_f, ty_f, tz_f, q_f[0], q_f[1], q_f[2], q_f[3])
-print(f"imu -> base_link: {inv_tx_f:.6f} {inv_ty_f:.6f} {inv_tz_f:.6f} {inv_q_f[0]:.7f} {inv_q_f[1]:.7f} {inv_q_f[2]:.7f} {inv_q_f[3]:.7f}")
+# Construct T_base_cam0
+T_base_cam0 = np.eye(4)
+T_base_cam0[:3, :3] = R_cam0_base.T  # Inverse of rotation
+T_base_cam0[:3, 3] = t_base_cam0
 
-print("\n=== BACK CAM (cam1) - 30 deg pitch ===")
-tx, ty, tz = -0.15, 0.0, 0.20
-q_mount = euler_to_quaternion(math.pi, 30 * math.pi / 180, 0)
-q_back = quaternion_multiply(q_mount, q_frd_to_imu)
-print(f"base_link -> cam: {tx} {ty} {tz} {q_back[0]:.7f} {q_back[1]:.7f} {q_back[2]:.7f} {q_back[3]:.7f}")
-inv_tx, inv_ty, inv_tz, inv_q = invert_transform(tx, ty, tz, q_back[0], q_back[1], q_back[2], q_back[3])
-print(f"imu -> base_link: {inv_tx:.6f} {inv_ty:.6f} {inv_tz:.6f} {inv_q[0]:.7f} {inv_q[1]:.7f} {inv_q[2]:.7f} {inv_q[3]:.7f}")
+T_base_imu = T_base_cam0 @ T_cam0_imu
+
+# Now we invert T_base_imu to get imu -> base_link (T_imu_base) for TF tree
+T_imu_base = np.linalg.inv(T_base_imu)
+t_imu_base = T_imu_base[:3, 3]
+q_imu_base = R.from_matrix(T_imu_base[:3, :3]).as_quat()
+
+print(f"\nimu -> base_link (Front Camera):")
+print(f"Translation: {t_imu_base[0]:.6f} {t_imu_base[1]:.6f} {t_imu_base[2]:.6f}")
+print(f"Quaternion: {q_imu_base[0]:.7f} {q_imu_base[1]:.7f} {q_imu_base[2]:.7f} {q_imu_base[3]:.7f}")
+
+# 3. For the BACK camera
+# T_base_cam1: mounted facing backward, 30 deg pitch down.
+t_base_cam1 = np.array([-0.15, 0.0, 0.20])
+# Start with cam0 orientation relative to base (FRD to OpenCV)
+# Then rotate it 180 yaw, 30 pitch down.
+R_mount = R.from_euler('ZYX', [180, 30, 0], degrees=True).as_matrix()
+R_base_cam1 = R_mount @ R_cam0_base.T
+T_base_cam1 = np.eye(4)
+T_base_cam1[:3, :3] = R_base_cam1
+T_base_cam1[:3, 3] = t_base_cam1
+
+q_cam1_base = R.from_matrix(R_base_cam1.T).as_quat()
+print(f"\nbase_link -> cam1_link (Back Camera):")
+print(f"Translation: {t_base_cam1[0]:.6f} {t_base_cam1[1]:.6f} {t_base_cam1[2]:.6f}")
+print(f"Quaternion: {q_cam1_base[0]:.7f} {q_cam1_base[1]:.7f} {q_cam1_base[2]:.7f} {q_cam1_base[3]:.7f}")
+
+T_cam1_imu = np.array([
+    [0.9998761771972654, 0.002831174545748783, -0.015479493663382282, 0.006442249327686602],
+    [0.0029326606695474597, -0.999974330610803, 0.0065374016913607265, 0.005483006345951236],
+    [-0.015460587788970944, -0.006581988314211809, -0.9998588138607628, -0.2352099820368647],
+    [0.0, 0.0, 0.0, 1.0]
+])
+
+T_base_imu1 = T_base_cam1 @ T_cam1_imu
+T_imu1_base = np.linalg.inv(T_base_imu1)
+t_imu1_base = T_imu1_base[:3, 3]
+q_imu1_base = R.from_matrix(T_imu1_base[:3, :3]).as_quat()
+
+print(f"\nimu -> base_link (Back Camera):")
+print(f"Translation: {t_imu1_base[0]:.6f} {t_imu1_base[1]:.6f} {t_imu1_base[2]:.6f}")
+print(f"Quaternion: {q_imu1_base[0]:.7f} {q_imu1_base[1]:.7f} {q_imu1_base[2]:.7f} {q_imu1_base[3]:.7f}")
+
