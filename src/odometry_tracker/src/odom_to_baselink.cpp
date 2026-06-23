@@ -37,11 +37,11 @@ public:
             std::bind(&OdomToBaselink::back_callback, this, std::placeholders::_1));
 
         // Static transform: cam0 IMU -> base_link
-        // T_base_cam0 = [0.11, 0, 0], q=[0.5, 0.5, 0.5, 0.5]
+        // T_base_cam0 = [0.12, 0, -0.14], q=[0.5, 0.5, 0.5, 0.5]
         // T_cam0_base = T_base_cam0^-1
         tf2::Quaternion q_front(-0.5, -0.5, -0.5, 0.5);
         T_imu_front_base_.setRotation(q_front);
-        T_imu_front_base_.setOrigin(tf2::Vector3(0.0, 0.14, 0.0));
+        T_imu_front_base_.setOrigin(tf2::Vector3(0.0, 0.14, -0.12));
 
         // Static transform: cam1 IMU -> base_link
         // T_base_cam1 = [-0.14, 0, -0.18], pitch down 15deg
