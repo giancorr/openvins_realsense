@@ -13,3 +13,7 @@ __pycache__/
 # OS specific
 .DS_Store
 Thumbs.db
+
+# Temp python scripts
+calc_transforms.py
+fix_cam1_rot.py
