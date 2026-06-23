@@ -152,7 +152,8 @@ private:
     // Static transforms
     tf2::Transform T_imu_front_base_;  // cam0 IMU -> base_link
     tf2::Transform T_imu_back_base_;   // cam1 IMU -> base_link
-    tf2::Transform T_global_globalned_; // global (ENU) -> global_ned (NED)
+    tf2::Transform T_global_globalned_front_; // global -> global_ned (front)
+    tf2::Transform T_global_globalned_back_;  // global -> global_ned (back)
 
     // Publishers & Subscribers
     rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr pub_front_;
