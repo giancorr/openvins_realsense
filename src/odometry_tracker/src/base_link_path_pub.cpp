@@ -10,6 +10,7 @@ public:
     BaseLinkPathPublisher() : Node("base_link_path_publisher")
     {
         publisher_ = this->create_publisher<nav_msgs::msg::Path>("/base_link_path", 10);
+        pose_publisher_ = this->create_publisher<geometry_msgs::msg::PoseStamped>("/base_link_pose", 10);
         tf_buffer_ = std::make_shared<tf2_ros::Buffer>(this->get_clock());
         tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
         path_msg_.header.frame_id = "global_ned";
@@ -42,9 +43,11 @@ private:
         path_msg_.poses.push_back(pose);
         path_msg_.header.stamp = transform.header.stamp;
         publisher_->publish(path_msg_);
+        pose_publisher_->publish(pose);
     }
 
     rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr publisher_;
+    rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr pose_publisher_;
     std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
     std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
     nav_msgs::msg::Path path_msg_;
