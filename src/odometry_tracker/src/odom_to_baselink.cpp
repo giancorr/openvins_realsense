@@ -46,16 +46,17 @@ public:
         T_imu_back_base_.setRotation(q_back);
         T_imu_back_base_.setOrigin(tf2::Vector3(-0.010360, 0.252312, -0.206836));
 
-        // Static transform: global -> global_ned (Inverse of global_ned -> global)
-        // For front camera, OpenVINS global is (X=Left, Y=Bwd, Z=Up). Map to FRD (X=Fwd, Y=Right, Z=Down)
-        // Transform FROM global TO global_ned requires inverse of the mapping matrix
-        tf2::Quaternion q_global_ned_front(0.7071068, -0.7071068, 0.0, 0.0);
-        T_global_globalned_front_.setRotation(q_global_ned_front.inverse());
+        // Static transform: global -> global_ned 
+        // User explicitly requested EXACTLY 180 deg around Y for ALL cameras.
+        // RotY(180) quaternion is (x=0, y=1, z=0, w=0).
+        // Since we need the inverse (global_ned -> global) for this specific variable,
+        // the inverse of (0, 1, 0, 0) is (0, -1, 0, 0).
+        tf2::Quaternion q_global_ned(0.0, -1.0, 0.0, 0.0);
+
+        T_global_globalned_front_.setRotation(q_global_ned);
         T_global_globalned_front_.setOrigin(tf2::Vector3(0.0, 0.0, 0.0));
 
-        // For back camera, OpenVINS global is (X=Right, Y=Fwd, Z=Up). Map to FRD
-        tf2::Quaternion q_global_ned_back(0.7071068, 0.7071068, 0.0, 0.0);
-        T_global_globalned_back_.setRotation(q_global_ned_back.inverse());
+        T_global_globalned_back_.setRotation(q_global_ned);
         T_global_globalned_back_.setOrigin(tf2::Vector3(0.0, 0.0, 0.0));
 
         RCLCPP_INFO(this->get_logger(),
