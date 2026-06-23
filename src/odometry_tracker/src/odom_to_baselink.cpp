@@ -44,11 +44,11 @@ public:
         T_imu_front_base_.setOrigin(tf2::Vector3(-0.0, 0.14, 0.12));
 
         // Static transform: cam1 IMU -> base_link
-        // T_base_cam1 = [-0.14, 0, 0.18], pitch down 15deg (FRD)
+        // T_base_cam1 = [-0.15, 0, 0.20], pitch down 15deg (FRD)
         // T_cam1_base = T_base_cam1^-1
         tf2::Quaternion q_back(-0.4304593, 0.4304593, -0.5609855, -0.5609855);
         T_imu_back_base_.setRotation(q_back);
-        T_imu_back_base_.setOrigin(tf2::Vector3(-0.0, 0.21010, 0.08864));
+        T_imu_back_base_.setOrigin(tf2::Vector3(0.0, 0.232008, 0.093125));
 
         // Static transform: global (ENU) -> global_ned (NED)
         // q=[0.70710678, 0.70710678, 0, 0]

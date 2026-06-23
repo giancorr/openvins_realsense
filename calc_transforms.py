@@ -7,7 +7,6 @@ def euler_to_quaternion(yaw, pitch, roll):
     sp = math.sin(pitch * 0.5)
     cr = math.cos(roll * 0.5)
     sr = math.sin(roll * 0.5)
-
     w = cr * cp * cy + sr * sp * sy
     x = sr * cp * cy - cr * sp * sy
     y = cr * sp * cy + sr * cp * sy
@@ -41,39 +40,29 @@ def invert_transform(tx, ty, tz, qx, qy, qz, qw):
     rz = R31*(-tx) + R32*(-ty) + R33*(-tz)
     return rx, ry, rz, q_inv
 
-# Base Link is FRD (Forward, Right, Down)
-# Cam0 is 12cm forward, 14cm down. In FRD, down is +Z.
-tx, ty, tz = 0.12, 0.0, 0.14
-# We want FRD -> IMU(Z Fwd, X Left, Y Up)
-# FRD: X Fwd, Y Right, Z Down
-# IMU: Z Fwd, X Left, Y Up
-# Mapping: Base_X -> IMU_Z, Base_Y -> IMU_-X, Base_Z -> IMU_-Y
-qx, qy, qz, qw = -0.5, -0.5, 0.5, 0.5
+# Back camera in FRD base_link:
+# 15cm back = X=-0.15, 20cm down = Z=+0.20 (FRD: Z down is positive)
+# Facing backward (yaw 180), pitched 15 deg down
+tx, ty, tz = -0.15, 0.0, 0.20
 
-print("--- BASE_LINK (FRD) -> CAM0_LINK ---")
-print(f"TF: {tx} {ty} {tz} {qx} {qy} {qz} {qw} base_link cam0_link")
+# FRD->IMU base rotation (forward facing cam)
+q_frd_to_imu = [-0.5, -0.5, 0.5, 0.5]
 
-inv_tx, inv_ty, inv_tz, inv_q = invert_transform(tx, ty, tz, qx, qy, qz, qw)
-print("\n--- IMU (CAM0) -> BASE_LINK (FRD) ---")
-print(f"TF: {inv_tx} {inv_ty} {inv_tz} {inv_q[0]} {inv_q[1]} {inv_q[2]} {inv_q[3]} imu base_link")
-print(f"CPP Origin: {inv_tx}, {inv_ty}, {inv_tz}")
-print(f"CPP Quat: {inv_q[0]}, {inv_q[1]}, {inv_q[2]}, {inv_q[3]}")
-
-# Back camera (cam1)
-# 14cm back (-0.14), 18cm down (+0.18).
-tx2, ty2, tz2 = -0.14, 0.0, 0.18
-# Orientation: yaw 180, pitch 15 down
-# In FRD, pitch down is positive pitch (rotation around Y, which is Right).
-# Yaw 180 means facing back.
-# We apply yaw and pitch to FRD frame.
+# Mount rotation: yaw 180 + pitch 15 down
 q_mount = euler_to_quaternion(math.pi, 15 * math.pi / 180, 0)
-q_back_base = quaternion_multiply(q_mount, [qx, qy, qz, qw])
+q_back = quaternion_multiply(q_mount, q_frd_to_imu)
 
-print("\n--- BASE_LINK (FRD) -> CAM1_LINK ---")
-print(f"TF: {tx2} {ty2} {tz2} {q_back_base[0]} {q_back_base[1]} {q_back_base[2]} {q_back_base[3]} base_link cam1_link")
+print("=== BACK CAM (cam1) - NEW MEASUREMENTS ===")
+print(f"base_link -> cam: {tx} {ty} {tz} {q_back[0]:.7f} {q_back[1]:.7f} {q_back[2]:.7f} {q_back[3]:.7f}")
 
-inv_tx2, inv_ty2, inv_tz2, inv_q2 = invert_transform(tx2, ty2, tz2, q_back_base[0], q_back_base[1], q_back_base[2], q_back_base[3])
-print("\n--- CAM1_IMU -> BASE_LINK (FRD) (For CPP) ---")
-print(f"CPP Origin: {inv_tx2}, {inv_ty2}, {inv_tz2}")
-print(f"CPP Quat: {inv_q2[0]}, {inv_q2[1]}, {inv_q2[2]}, {inv_q2[3]}")
+inv_tx, inv_ty, inv_tz, inv_q = invert_transform(tx, ty, tz, q_back[0], q_back[1], q_back[2], q_back[3])
+print(f"\nimu -> base_link: {inv_tx:.6f} {inv_ty:.6f} {inv_tz:.6f} {inv_q[0]:.7f} {inv_q[1]:.7f} {inv_q[2]:.7f} {inv_q[3]:.7f}")
+print(f"\nCPP Origin: tf2::Vector3({inv_tx:.6f}, {inv_ty:.6f}, {inv_tz:.6f})")
+print(f"CPP Quat: tf2::Quaternion({inv_q[0]:.7f}, {inv_q[1]:.7f}, {inv_q[2]:.7f}, {inv_q[3]:.7f})")
 
+# Also recalc front cam with new back measurements for the dual/odom files
+print("\n=== FRONT CAM (cam0) - UNCHANGED ===")
+tx_f, ty_f, tz_f = 0.12, 0.0, 0.14
+q_f = q_frd_to_imu
+inv_tx_f, inv_ty_f, inv_tz_f, inv_q_f = invert_transform(tx_f, ty_f, tz_f, q_f[0], q_f[1], q_f[2], q_f[3])
+print(f"imu -> base_link: {inv_tx_f:.6f} {inv_ty_f:.6f} {inv_tz_f:.6f} {inv_q_f[0]:.7f} {inv_q_f[1]:.7f} {inv_q_f[2]:.7f} {inv_q_f[3]:.7f}")
