@@ -40,16 +40,21 @@ def invert_transform(tx, ty, tz, qx, qy, qz, qw):
     rz = R31*(-tx) + R32*(-ty) + R33*(-tz)
     return rx, ry, rz, q_inv
 
-q_frd_to_imu = [-0.5, -0.5, 0.5, 0.5]
+# The correct mapping from FRD to T265 IMU (X Fwd, Y Left, Z Up)
+# This is a 180 degree rotation around X!
+q_frd_to_imu = [1.0, 0.0, 0.0, 0.0]
 
-print("=== BACK CAM (cam1) - NEW MEASUREMENTS (30 deg pitch) ===")
+print("=== FRONT CAM (cam0) ===")
+tx_f, ty_f, tz_f = 0.12, 0.0, 0.14
+q_f = q_frd_to_imu
+print(f"base_link -> cam: {tx_f} {ty_f} {tz_f} {q_f[0]:.7f} {q_f[1]:.7f} {q_f[2]:.7f} {q_f[3]:.7f}")
+inv_tx_f, inv_ty_f, inv_tz_f, inv_q_f = invert_transform(tx_f, ty_f, tz_f, q_f[0], q_f[1], q_f[2], q_f[3])
+print(f"imu -> base_link: {inv_tx_f:.6f} {inv_ty_f:.6f} {inv_tz_f:.6f} {inv_q_f[0]:.7f} {inv_q_f[1]:.7f} {inv_q_f[2]:.7f} {inv_q_f[3]:.7f}")
+
+print("\n=== BACK CAM (cam1) - 30 deg pitch ===")
 tx, ty, tz = -0.15, 0.0, 0.20
 q_mount = euler_to_quaternion(math.pi, 30 * math.pi / 180, 0)
 q_back = quaternion_multiply(q_mount, q_frd_to_imu)
-
 print(f"base_link -> cam: {tx} {ty} {tz} {q_back[0]:.7f} {q_back[1]:.7f} {q_back[2]:.7f} {q_back[3]:.7f}")
-
 inv_tx, inv_ty, inv_tz, inv_q = invert_transform(tx, ty, tz, q_back[0], q_back[1], q_back[2], q_back[3])
-print(f"\nimu -> base_link: {inv_tx:.6f} {inv_ty:.6f} {inv_tz:.6f} {inv_q[0]:.7f} {inv_q[1]:.7f} {inv_q[2]:.7f} {inv_q[3]:.7f}")
-print(f"\nCPP Origin: tf2::Vector3({inv_tx:.6f}, {inv_ty:.6f}, {inv_tz:.6f})")
-print(f"CPP Quat: tf2::Quaternion({inv_q[0]:.7f}, {inv_q[1]:.7f}, {inv_q[2]:.7f}, {inv_q[3]:.7f})")
+print(f"imu -> base_link: {inv_tx:.6f} {inv_ty:.6f} {inv_tz:.6f} {inv_q[0]:.7f} {inv_q[1]:.7f} {inv_q[2]:.7f} {inv_q[3]:.7f}")
