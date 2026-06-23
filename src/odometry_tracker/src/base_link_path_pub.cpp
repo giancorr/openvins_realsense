@@ -5,7 +5,6 @@
 #include <tf2_ros/transform_listener.h>
 #include <tf2/LinearMath/Transform.h>
 #include <tf2/LinearMath/Quaternion.h>
-#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
 class BaseLinkPathPublisher : public rclcpp::Node
 {
@@ -36,7 +35,15 @@ private:
         }
 
         tf2::Transform T_global_base;
-        tf2::fromMsg(transform.transform, T_global_base);
+        T_global_base.setOrigin(tf2::Vector3(
+            transform.transform.translation.x,
+            transform.transform.translation.y,
+            transform.transform.translation.z));
+        T_global_base.setRotation(tf2::Quaternion(
+            transform.transform.rotation.x,
+            transform.transform.rotation.y,
+            transform.transform.rotation.z,
+            transform.transform.rotation.w));
 
         if (first_) {
             double roll, pitch, yaw;
@@ -59,7 +66,10 @@ private:
         pose.pose.position.y = T_corrected.getOrigin().y();
         pose.pose.position.z = T_corrected.getOrigin().z();
         
-        pose.pose.orientation = tf2::toMsg(T_corrected.getRotation());
+        pose.pose.orientation.x = T_corrected.getRotation().x();
+        pose.pose.orientation.y = T_corrected.getRotation().y();
+        pose.pose.orientation.z = T_corrected.getRotation().z();
+        pose.pose.orientation.w = T_corrected.getRotation().w();
 
         path_msg_.poses.push_back(pose);
         path_msg_.header.stamp = transform.header.stamp;
