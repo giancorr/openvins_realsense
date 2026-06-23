@@ -16,15 +16,12 @@
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2/LinearMath/Transform.h>
 #include <tf2/LinearMath/Matrix3x3.h>
-#include <tf2_ros/static_transform_broadcaster.h>
-#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
 class OdomToBaselink : public rclcpp::Node
 {
 public:
     OdomToBaselink() : Node("odom_to_baselink")
     {
-        tf_static_broadcaster_ = std::make_shared<tf2_ros::StaticTransformBroadcaster>(this);
         // Publishers
         pub_front_ = this->create_publisher<nav_msgs::msg::Odometry>(
             "/front/base_link_odom", 10);
@@ -49,7 +46,17 @@ public:
         T_imu_back_base_.setRotation(q_back);
         T_imu_back_base_.setOrigin(tf2::Vector3(-0.010360, 0.252312, -0.206836));
 
-        // We no longer define static global_ned here; we compute it dynamically in the first callback!
+        // Static transform: global -> global_ned (Inverse of global_ned -> global)
+        // For front camera, OpenVINS global is (X=Left, Y=Bwd, Z=Up). Map to FRD (X=Fwd, Y=Right, Z=Down)
+        // Transform FROM global TO global_ned requires inverse of the mapping matrix
+        tf2::Quaternion q_global_ned_front(0.7071068, -0.7071068, 0.0, 0.0);
+        T_global_globalned_front_.setRotation(q_global_ned_front.inverse());
+        T_global_globalned_front_.setOrigin(tf2::Vector3(0.0, 0.0, 0.0));
+
+        // For back camera, OpenVINS global is (X=Right, Y=Fwd, Z=Up). Map to FRD
+        tf2::Quaternion q_global_ned_back(0.7071068, 0.7071068, 0.0, 0.0);
+        T_global_globalned_back_.setRotation(q_global_ned_back.inverse());
+        T_global_globalned_back_.setOrigin(tf2::Vector3(0.0, 0.0, 0.0));
 
         RCLCPP_INFO(this->get_logger(),
             "odom_to_baselink started: transforming IMU odometries to base_link in global_ned");
@@ -67,33 +74,7 @@ private:
 
         tf2::Transform T_raw = T_ovglobal_imu * T_imu_front_base_;
 
-        if (first_front_) {
-            tf2::Transform T_fixed_rot(tf2::Quaternion(0.7071068, -0.7071068, 0.0, 0.0), tf2::Vector3(0,0,0));
-            tf2::Transform T_temp_ned = T_fixed_rot * T_raw;
-            double roll, pitch, yaw;
-            T_temp_ned.getBasis().getRPY(roll, pitch, yaw);
-            
-            tf2::Quaternion q_yaw_corr;
-            q_yaw_corr.setRPY(0, 0, -yaw);
-            tf2::Transform T_yaw_corr(q_yaw_corr, tf2::Vector3(0,0,0));
-            
-            T_globalned_global_front_ = T_yaw_corr * T_fixed_rot;
-
-            // Broadcast TF for global -> global_ned
-            geometry_msgs::msg::TransformStamped tf_msg;
-            tf_msg.header.stamp = msg->header.stamp;
-            tf_msg.header.frame_id = "global_ned";
-            tf_msg.child_frame_id = "global";
-            tf_msg.transform.translation.x = 0.0;
-            tf_msg.transform.translation.y = 0.0;
-            tf_msg.transform.translation.z = 0.0;
-            tf_msg.transform.rotation = tf2::toMsg(T_globalned_global_front_.getRotation());
-            tf_static_broadcaster_->sendTransform(tf_msg);
-
-            first_front_ = false;
-        }
-
-        tf2::Transform T_global_base = T_globalned_global_front_ * T_raw;
+        tf2::Transform T_global_base = T_global_globalned_front_ * T_raw;
 
         auto out = build_output_msg(msg, T_global_base, T_imu_front_base_);
         pub_front_->publish(out);
@@ -110,33 +91,7 @@ private:
 
         tf2::Transform T_raw = T_ovglobal_imu * T_imu_back_base_;
 
-        if (first_back_) {
-            tf2::Transform T_fixed_rot(tf2::Quaternion(0.7071068, 0.7071068, 0.0, 0.0), tf2::Vector3(0,0,0));
-            tf2::Transform T_temp_ned = T_fixed_rot * T_raw;
-            double roll, pitch, yaw;
-            T_temp_ned.getBasis().getRPY(roll, pitch, yaw);
-            
-            tf2::Quaternion q_yaw_corr;
-            q_yaw_corr.setRPY(0, 0, -yaw);
-            tf2::Transform T_yaw_corr(q_yaw_corr, tf2::Vector3(0,0,0));
-            
-            T_globalned_global_back_ = T_yaw_corr * T_fixed_rot;
-
-            // Broadcast TF for global -> global_ned
-            geometry_msgs::msg::TransformStamped tf_msg;
-            tf_msg.header.stamp = msg->header.stamp;
-            tf_msg.header.frame_id = "global_ned";
-            tf_msg.child_frame_id = "global";
-            tf_msg.transform.translation.x = 0.0;
-            tf_msg.transform.translation.y = 0.0;
-            tf_msg.transform.translation.z = 0.0;
-            tf_msg.transform.rotation = tf2::toMsg(T_globalned_global_back_.getRotation());
-            tf_static_broadcaster_->sendTransform(tf_msg);
-
-            first_back_ = false;
-        }
-
-        tf2::Transform T_global_base = T_globalned_global_back_ * T_raw;
+        tf2::Transform T_global_base = T_global_globalned_back_ * T_raw;
 
         auto out = build_output_msg(msg, T_global_base, T_imu_back_base_);
         pub_back_->publish(out);
@@ -199,9 +154,8 @@ private:
     // Static transforms
     tf2::Transform T_imu_front_base_;  
     tf2::Transform T_imu_back_base_;   
-    tf2::Transform T_globalned_global_front_; 
-    tf2::Transform T_globalned_global_back_;  
-    std::shared_ptr<tf2_ros::StaticTransformBroadcaster> tf_static_broadcaster_;
+    tf2::Transform T_global_globalned_front_; 
+    tf2::Transform T_global_globalned_back_;  
 
     // Publishers & Subscribers
     rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr pub_front_;

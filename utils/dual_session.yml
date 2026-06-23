@@ -42,7 +42,7 @@ windows:
           
       # Riquadro 3: TF Tree (global=ENU, global_ned=NED, base_link=NED fusa)
       - shell_command:
-          - ros2 run tf2_ros static_transform_publisher 0.008649 0.144703 -0.103955 0.5047690 -0.4984747 0.4937537 0.5029300 imu base_link & ros2 run tf2_ros static_transform_publisher 0.12 0 0.14 -0.5 -0.5 -0.5 0.5 base_link cam0_link & ros2 run tf2_ros static_transform_publisher -0.15 0 0.20 -0.6123724 0.6123724 0.3535534 0.3535534 base_link cam1_link
+          - ros2 run tf2_ros static_transform_publisher 0 0 0 0.7071068 -0.7071068 0 0 global global_ned & ros2 run tf2_ros static_transform_publisher 0.008649 0.144703 -0.103955 0.5047690 -0.4984747 0.4937537 0.5029300 imu base_link & ros2 run tf2_ros static_transform_publisher 0.12 0 0.14 -0.5 -0.5 -0.5 0.5 base_link cam0_link & ros2 run tf2_ros static_transform_publisher -0.15 0 0.20 -0.6123724 0.6123724 0.3535534 0.3535534 base_link cam1_link
 
       # Riquadro 4: Terminale vuoto per debug
       - shell_command:
