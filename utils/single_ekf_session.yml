@@ -17,7 +17,7 @@ windows:
       # Riquadro 2: RViz2
       - shell_command:
           - sleep 5 # Aspetta che l'algoritmo sia partito
-          - ros2 run rviz2 rviz2 -d $(ros2 pkg prefix openvins_bringup)/share/openvins_bringup/config/default.rviz
+          - ros2 run rviz2 rviz2 -d $(ros2 pkg prefix openvins_bringup)/share/openvins_bringup/config/single.rviz
           
       # Riquadro 3: Odom to Baselink converter + EKF
       - shell_command:

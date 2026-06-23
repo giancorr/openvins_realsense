@@ -17,7 +17,7 @@ windows:
       # Riquadro 2: RViz2
       - shell_command:
           - sleep 5 # Aspetta che l'algoritmo sia partito
-          - ros2 run rviz2 rviz2 -d $(ros2 pkg prefix openvins_bringup)/share/openvins_bringup/config/default.rviz
+          - ros2 run rviz2 rviz2 -d $(ros2 pkg prefix openvins_bringup)/share/openvins_bringup/config/single.rviz
           
       # Riquadro 3: Path Publisher (base_link) - C++
       - shell_command:
@@ -35,9 +35,9 @@ windows:
       - shell_command:
           - ros2 launch realsense2_camera rs_launch.py camera_name:=cam0 enable_fisheye1:=true enable_fisheye2:=true enable_pose:=false enable_gyro:=true enable_accel:=true unite_imu_method:="2"
       
-      # Riquadro 2: Telecamera 2 (cam1) - Secondary without IMU
+      # Riquadro 2: Terminale vuoto per debug
       - shell_command:
-          - ros2 launch realsense2_camera rs_launch.py camera_name:=cam1 enable_fisheye1:=true enable_fisheye2:=true enable_pose:=false enable_gyro:=false enable_accel:=false
+          - clear
           
       # Riquadro 3: TF Tree (base_link=NED, cam Z=fuori dalla lente, global_ned=NED)
       - shell_command:
