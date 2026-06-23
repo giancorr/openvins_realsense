@@ -33,12 +33,12 @@ windows:
     panes:
       # Riquadro 1: Telecamera 1 (cam0) - Main with IMU
       - shell_command:
-          - ros2 launch realsense2_camera rs_launch.py camera_name:=cam0 serial_no:="'905312111404'" enable_fisheye1:=true enable_fisheye2:=true enable_pose:=false enable_gyro:=true enable_accel:=true unite_imu_method:="2"
+          - ros2 launch realsense2_camera rs_launch.py camera_name:=cam0 enable_fisheye1:=true enable_fisheye2:=true enable_pose:=false enable_gyro:=true enable_accel:=true unite_imu_method:="2"
       
       # Riquadro 2: Telecamera 2 (cam1) - Secondary without IMU
       - shell_command:
-          - ros2 launch realsense2_camera rs_launch.py camera_name:=cam1 serial_no:="'146322110430'" enable_fisheye1:=true enable_fisheye2:=true enable_pose:=false enable_gyro:=false enable_accel:=false
+          - ros2 launch realsense2_camera rs_launch.py camera_name:=cam1 enable_fisheye1:=true enable_fisheye2:=true enable_pose:=false enable_gyro:=false enable_accel:=false
           
       # Riquadro 3: TF Tree (base_link=NED, cam Z=fuori dalla lente, global_ned=NED)
       - shell_command:
-          - ros2 run tf2_ros static_transform_publisher 0 0 0 0.707107 0.707107 0 0 global global_ned & ros2 run tf2_ros static_transform_publisher 0 0 -0.11 0.5 -0.5 0.5 0.5 imu base_link & ros2 run tf2_ros static_transform_publisher 0.11 0 0 0.5 0.5 0.5 0.5 base_link cam0_link & ros2 run tf2_ros static_transform_publisher -0.11 0 0 0.5 -0.5 -0.5 0.5 base_link cam1_link
+          - ros2 run tf2_ros static_transform_publisher 0 0 0 0.707107 0.707107 0 0 global global_ned & ros2 run tf2_ros static_transform_publisher 0 0.14 0 0.5 -0.5 0.5 0.5 imu base_link & ros2 run tf2_ros static_transform_publisher 0 0 -0.14 0.5 0.5 0.5 0.5 base_link cam0_link & ros2 run tf2_ros static_transform_publisher -0.14 0 -0.18 -0.5609855 0.5609855 0.4304593 -0.4304593 base_link cam1_link
