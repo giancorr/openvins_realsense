@@ -1,0 +1,44 @@
+session_name: vio_stack
+options:
+  mouse: 'on'
+
+shell_command_before:
+  - source /root/ros2_ws/install/setup.bash
+
+windows:
+  - window_name: algorithms
+    layout: tiled
+    panes:
+      # Riquadro 1: OpenVINS
+      - shell_command:
+          - sleep 3 # Aspetta che le telecamere si accendano
+          - ros2 launch openvins_bringup launch_openvins.launch.py
+      
+      # Riquadro 2: RViz2
+      - shell_command:
+          - sleep 5 # Aspetta che l'algoritmo sia partito
+          - ros2 run rviz2 rviz2 -d $(ros2 pkg prefix openvins_bringup)/share/openvins_bringup/config/single.rviz
+          
+      # Riquadro 3: Path Publisher (base_link) - C++
+      - shell_command:
+          - sleep 6 # Aspetta l'avvio delle TF
+          - ros2 run odometry_tracker base_link_path_pub
+          
+      # Riquadro 4: Terminale vuoto per test
+      - shell_command:
+          - clear
+
+  - window_name: drivers
+    layout: tiled
+    panes:
+      # Riquadro 1: Telecamera 1 (cam0) - Main with IMU
+      - shell_command:
+          - ros2 launch realsense2_camera rs_launch.py camera_name:=cam0 enable_fisheye1:=true enable_fisheye2:=true enable_pose:=false enable_gyro:=true enable_accel:=true unite_imu_method:="2"
+      
+      # Riquadro 2: Terminale vuoto per debug
+      - shell_command:
+          - clear
+          
+      # Riquadro 3: TF Tree (base_link=NED, cam Z=fuori dalla lente, global_ned=NED)
+      - shell_command:
+          - ros2 run tf2_ros static_transform_publisher 0 0 0 0.707107 0.707107 0 0 global global_ned & ros2 run tf2_ros static_transform_publisher 0 0.210101 0.088642 -0.430459 0.430459 -0.560985 -0.560985 imu base_link & ros2 run tf2_ros static_transform_publisher -0.14 0 0.18 0.430459 -0.430459 0.560985 -0.560985 base_link cam0_link
