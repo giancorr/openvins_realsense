@@ -37,18 +37,18 @@ public:
             std::bind(&OdomToBaselink::back_callback, this, std::placeholders::_1));
 
         // Static transform: cam0 IMU -> base_link
-        // T_base_cam0 = [0.12, 0, -0.14], q=[0.5, 0.5, 0.5, 0.5]
+        // T_base_cam0 = [0.12, 0, 0.14] in FRD, q=[-0.5, -0.5, 0.5, 0.5]
         // T_cam0_base = T_base_cam0^-1
-        tf2::Quaternion q_front(-0.5, -0.5, -0.5, 0.5);
+        tf2::Quaternion q_front(0.5, 0.5, -0.5, 0.5);
         T_imu_front_base_.setRotation(q_front);
-        T_imu_front_base_.setOrigin(tf2::Vector3(0.0, 0.14, -0.12));
+        T_imu_front_base_.setOrigin(tf2::Vector3(-0.0, 0.14, 0.12));
 
         // Static transform: cam1 IMU -> base_link
-        // T_base_cam1 = [-0.14, 0, -0.18], pitch down 15deg
+        // T_base_cam1 = [-0.14, 0, 0.18], pitch down 15deg (FRD)
         // T_cam1_base = T_base_cam1^-1
-        tf2::Quaternion q_back(0.5609855, -0.5609855, -0.4304593, -0.4304593);
+        tf2::Quaternion q_back(-0.4304593, 0.4304593, -0.5609855, -0.5609855);
         T_imu_back_base_.setRotation(q_back);
-        T_imu_back_base_.setOrigin(tf2::Vector3(0.0, 0.13763, -0.18181));
+        T_imu_back_base_.setOrigin(tf2::Vector3(-0.0, 0.21010, 0.08864));
 
         // Static transform: global (ENU) -> global_ned (NED)
         // q=[0.70710678, 0.70710678, 0, 0]

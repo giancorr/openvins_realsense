@@ -1,42 +1,5 @@
 import math
 
-def invert_transform(tx, ty, tz, qx, qy, qz, qw):
-    # R_inv = q_conjugate
-    q_inv = [-qx, -qy, -qz, qw]
-    
-    # t_inv = -R_inv * t
-    w, x, y, z = qw, -qx, -qy, -qz
-    R11 = 1 - 2*y**2 - 2*z**2
-    R12 = 2*x*y - 2*z*w
-    R13 = 2*x*z + 2*y*w
-    R21 = 2*x*y + 2*z*w
-    R22 = 1 - 2*x**2 - 2*z**2
-    R23 = 2*y*z - 2*x*w
-    R31 = 2*x*z - 2*y*w
-    R32 = 2*y*z + 2*x*w
-    R33 = 1 - 2*x**2 - 2*y**2
-    
-    rx = R11*(-tx) + R12*(-ty) + R13*(-tz)
-    ry = R21*(-tx) + R22*(-ty) + R23*(-tz)
-    rz = R31*(-tx) + R32*(-ty) + R33*(-tz)
-    
-    return rx, ry, rz, q_inv
-
-# Front camera (cam0) in base_link (FLU)
-# User said: 12cm forward, 14cm down.
-tx, ty, tz = 0.12, 0.0, -0.14
-qx, qy, qz, qw = 0.5, 0.5, 0.5, 0.5 # FLU to IMU
-
-print("--- BASE_LINK -> CAM0_LINK ---")
-print(f"TF: {tx} {ty} {tz} {qx} {qy} {qz} {qw} base_link cam0_link")
-
-inv_tx, inv_ty, inv_tz, inv_q = invert_transform(tx, ty, tz, qx, qy, qz, qw)
-print("\n--- IMU (CAM0) -> BASE_LINK ---")
-print(f"TF: {inv_tx} {inv_ty} {inv_tz} {inv_q[0]} {inv_q[1]} {inv_q[2]} {inv_q[3]} imu base_link")
-
-# Back camera (cam1) in base_link (FLU)
-# User said: 14cm back, 18cm down, 15 deg pitch down.
-import math
 def euler_to_quaternion(yaw, pitch, roll):
     cy = math.cos(yaw * 0.5)
     sy = math.sin(yaw * 0.5)
@@ -61,19 +24,56 @@ def quaternion_multiply(q1, q2):
         w1*w2 - x1*x2 - y1*y2 - z1*z2
     ]
 
-# Back camera orientation
-# Base rotation * yaw 180 * pitch 15
-q_cam_standard = [0.5, 0.5, 0.5, 0.5]
-yaw_rot = math.pi
-pitch_rot = 15 * math.pi / 180
-q_mount = euler_to_quaternion(yaw_rot, pitch_rot, 0)
-q_back_base = quaternion_multiply(q_mount, q_cam_standard)
+def invert_transform(tx, ty, tz, qx, qy, qz, qw):
+    q_inv = [-qx, -qy, -qz, qw]
+    w, x, y, z = qw, -qx, -qy, -qz
+    R11 = 1 - 2*y**2 - 2*z**2
+    R12 = 2*x*y - 2*z*w
+    R13 = 2*x*z + 2*y*w
+    R21 = 2*x*y + 2*z*w
+    R22 = 1 - 2*x**2 - 2*z**2
+    R23 = 2*y*z - 2*x*w
+    R31 = 2*x*z - 2*y*w
+    R32 = 2*y*z + 2*x*w
+    R33 = 1 - 2*x**2 - 2*y**2
+    rx = R11*(-tx) + R12*(-ty) + R13*(-tz)
+    ry = R21*(-tx) + R22*(-ty) + R23*(-tz)
+    rz = R31*(-tx) + R32*(-ty) + R33*(-tz)
+    return rx, ry, rz, q_inv
 
-tx2, ty2, tz2 = -0.14, 0.0, -0.18
-print("\n--- BASE_LINK -> CAM1_LINK ---")
+# Base Link is FRD (Forward, Right, Down)
+# Cam0 is 12cm forward, 14cm down. In FRD, down is +Z.
+tx, ty, tz = 0.12, 0.0, 0.14
+# We want FRD -> IMU(Z Fwd, X Left, Y Up)
+# FRD: X Fwd, Y Right, Z Down
+# IMU: Z Fwd, X Left, Y Up
+# Mapping: Base_X -> IMU_Z, Base_Y -> IMU_-X, Base_Z -> IMU_-Y
+qx, qy, qz, qw = -0.5, -0.5, 0.5, 0.5
+
+print("--- BASE_LINK (FRD) -> CAM0_LINK ---")
+print(f"TF: {tx} {ty} {tz} {qx} {qy} {qz} {qw} base_link cam0_link")
+
+inv_tx, inv_ty, inv_tz, inv_q = invert_transform(tx, ty, tz, qx, qy, qz, qw)
+print("\n--- IMU (CAM0) -> BASE_LINK (FRD) ---")
+print(f"TF: {inv_tx} {inv_ty} {inv_tz} {inv_q[0]} {inv_q[1]} {inv_q[2]} {inv_q[3]} imu base_link")
+print(f"CPP Origin: {inv_tx}, {inv_ty}, {inv_tz}")
+print(f"CPP Quat: {inv_q[0]}, {inv_q[1]}, {inv_q[2]}, {inv_q[3]}")
+
+# Back camera (cam1)
+# 14cm back (-0.14), 18cm down (+0.18).
+tx2, ty2, tz2 = -0.14, 0.0, 0.18
+# Orientation: yaw 180, pitch 15 down
+# In FRD, pitch down is positive pitch (rotation around Y, which is Right).
+# Yaw 180 means facing back.
+# We apply yaw and pitch to FRD frame.
+q_mount = euler_to_quaternion(math.pi, 15 * math.pi / 180, 0)
+q_back_base = quaternion_multiply(q_mount, [qx, qy, qz, qw])
+
+print("\n--- BASE_LINK (FRD) -> CAM1_LINK ---")
 print(f"TF: {tx2} {ty2} {tz2} {q_back_base[0]} {q_back_base[1]} {q_back_base[2]} {q_back_base[3]} base_link cam1_link")
 
 inv_tx2, inv_ty2, inv_tz2, inv_q2 = invert_transform(tx2, ty2, tz2, q_back_base[0], q_back_base[1], q_back_base[2], q_back_base[3])
-print("\n--- CAM1_IMU -> BASE_LINK (For CPP) ---")
-print(f"Origin: {inv_tx2}, {inv_ty2}, {inv_tz2}")
-print(f"Quat: {inv_q2[0]}, {inv_q2[1]}, {inv_q2[2]}, {inv_q2[3]}")
+print("\n--- CAM1_IMU -> BASE_LINK (FRD) (For CPP) ---")
+print(f"CPP Origin: {inv_tx2}, {inv_ty2}, {inv_tz2}")
+print(f"CPP Quat: {inv_q2[0]}, {inv_q2[1]}, {inv_q2[2]}, {inv_q2[3]}")
+
