@@ -42,24 +42,29 @@ public:
         T_imu_front_base_.setOrigin(tf2::Vector3(0.008649, 0.144703, -0.103955));
 
         // Static transform: cam1 IMU -> base_link
-        // L'originale era (0.3567783, -0.3462856, 0.6116574, 0.6153622).
-        // Aggiunta rotazione di 180 gradi su Z per far guardare il base_link in avanti
+        // Aggiunta la rotazione Z di 180 gradi necessaria per la telecamera posteriore
         tf2::Quaternion q_back(-0.34628562, -0.35677832, 0.61536224, -0.61165744);
         T_imu_back_base_.setRotation(q_back);
         T_imu_back_base_.setOrigin(tf2::Vector3(-0.010360, 0.252312, -0.206836));
 
         // Static transform: global -> global_ned 
-        // User explicitly requested EXACTLY 180 deg around X for ALL cameras.
-        // RotX(180) quaternion is (x=1, y=0, z=0, w=0).
-        // Since we need the inverse (global_ned -> global) for this specific variable,
-        // the inverse of (1, 0, 0, 0) is (-1, 0, 0, 0), ma in tf2::Quaternion (1, 0, 0, 0) è la stessa rotazione.
+        // Static transform: global -> global_ned 
+        // IL SUPERVISORE HA RAGIONE: Le terne globali non si toccano. Sempre RotX(180).
         tf2::Quaternion q_global_ned(1.0, 0.0, 0.0, 0.0);
-
+        
         T_global_globalned_front_.setRotation(q_global_ned);
         T_global_globalned_front_.setOrigin(tf2::Vector3(0.0, 0.0, 0.0));
 
         T_global_globalned_back_.setRotation(q_global_ned);
         T_global_globalned_back_.setOrigin(tf2::Vector3(0.0, 0.0, 0.0));
+
+        // CORREZIONE FIGLIA DI GLOBAL PER LA SESSIONE FRONTALE:
+        // Poiché la sessione frontale fa nascere il mondo OpenVINS sfalsato di 90 gradi (in ENU anziché NWU)
+        // applichiamo una rotazione di -90 gradi su Z tra global e imu per raddrizzarlo PRIMA del RotX(180).
+        tf2::Quaternion q_correction_front;
+        q_correction_front.setRPY(0.0, 0.0, -1.57079632679); // -90 gradi in radianti
+        T_global_correction_front_.setRotation(q_correction_front);
+        T_global_correction_front_.setOrigin(tf2::Vector3(0.0, 0.0, 0.0));
 
         RCLCPP_INFO(this->get_logger(),
             "odom_to_baselink started: transforming IMU odometries to base_link in global_ned");
@@ -75,7 +80,11 @@ private:
         T_ovglobal_imu.setOrigin(tf2::Vector3(
             msg->pose.pose.position.x, msg->pose.pose.position.y, msg->pose.pose.position.z));
 
-        tf2::Transform T_raw = T_ovglobal_imu * T_imu_front_base_;
+        // Operiamo sulla trasformazione figlia di global:
+        // Applichiamo la rotazione di -90 gradi su Z per farla combaciare con la NWU
+        tf2::Transform T_corrected_global_imu = T_global_correction_front_ * T_ovglobal_imu;
+
+        tf2::Transform T_raw = T_corrected_global_imu * T_imu_front_base_;
 
         tf2::Transform T_global_base = T_global_globalned_front_ * T_raw;
 
@@ -159,6 +168,7 @@ private:
     tf2::Transform T_imu_back_base_;   
     tf2::Transform T_global_globalned_front_; 
     tf2::Transform T_global_globalned_back_;  
+    tf2::Transform T_global_correction_front_; // Correzione per il frame frontale  
 
     // Publishers & Subscribers
     rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr pub_front_;
