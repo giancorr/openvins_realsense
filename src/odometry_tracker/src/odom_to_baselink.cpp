@@ -42,16 +42,18 @@ public:
         T_imu_front_base_.setOrigin(tf2::Vector3(0.008649, 0.144703, -0.103955));
 
         // Static transform: cam1 IMU -> base_link
-        tf2::Quaternion q_back(0.3567783, -0.3462856, 0.6116574, 0.6153622);
+        // L'originale era (0.3567783, -0.3462856, 0.6116574, 0.6153622).
+        // Aggiunta rotazione di 180 gradi su Z per far guardare il base_link in avanti
+        tf2::Quaternion q_back(-0.34628562, -0.35677832, 0.61536224, -0.61165744);
         T_imu_back_base_.setRotation(q_back);
         T_imu_back_base_.setOrigin(tf2::Vector3(-0.010360, 0.252312, -0.206836));
 
         // Static transform: global -> global_ned 
-        // User explicitly requested EXACTLY 180 deg around Y for ALL cameras.
-        // RotY(180) quaternion is (x=0, y=1, z=0, w=0).
+        // User explicitly requested EXACTLY 180 deg around X for ALL cameras.
+        // RotX(180) quaternion is (x=1, y=0, z=0, w=0).
         // Since we need the inverse (global_ned -> global) for this specific variable,
-        // the inverse of (0, 1, 0, 0) is (0, -1, 0, 0).
-        tf2::Quaternion q_global_ned(0.0, -1.0, 0.0, 0.0);
+        // the inverse of (1, 0, 0, 0) is (-1, 0, 0, 0), ma in tf2::Quaternion (1, 0, 0, 0) è la stessa rotazione.
+        tf2::Quaternion q_global_ned(1.0, 0.0, 0.0, 0.0);
 
         T_global_globalned_front_.setRotation(q_global_ned);
         T_global_globalned_front_.setOrigin(tf2::Vector3(0.0, 0.0, 0.0));
