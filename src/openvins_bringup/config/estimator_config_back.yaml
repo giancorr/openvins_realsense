@@ -68,7 +68,7 @@ up_slam_sigma_px: 1
 up_slam_chi2_multipler: 1
 up_aruco_sigma_px: 1
 up_aruco_chi2_multipler: 1
-use_mask: false
+use_mask: true
 mask0: "mask_t265_cam1.png"
 relative_config_imu: "kalibr_imu_chain.yaml"
 relative_config_imucam: "kalibr_imucam_chain_back.yaml"
