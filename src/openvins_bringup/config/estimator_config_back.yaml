@@ -50,7 +50,7 @@ filepath_std: "/tmp/ov_estimate_std_back.txt"
 filepath_gt: "/tmp/ov_groundtruth.txt"
 use_klt: true
 num_pts: 200
-fast_threshold: 30
+fast_threshold: 15
 grid_x: 5
 grid_y: 5
 min_px_dist: 15
@@ -68,7 +68,7 @@ up_slam_sigma_px: 1
 up_slam_chi2_multipler: 1
 up_aruco_sigma_px: 1
 up_aruco_chi2_multipler: 1
-use_mask: true
+use_mask: false
 mask0: "mask_t265_cam1.png"
 relative_config_imu: "kalibr_imu_chain.yaml"
 relative_config_imucam: "kalibr_imucam_chain_back.yaml"
