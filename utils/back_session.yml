@@ -41,4 +41,4 @@ windows:
           
       # Riquadro 3: TF Tree (base_link=NED, cam Z=fuori dalla lente, global_ned=NED)
       - shell_command:
-          - ros2 run tf2_ros static_transform_publisher 0 0 0 1 0 0 0 global global_ned & ros2 run tf2_ros static_transform_publisher -0.010360 0.252312 -0.206836 0.3567783 -0.3462856 0.6116574 0.6153622 imu base_link & ros2 run tf2_ros static_transform_publisher -0.15 0 0.20 0.35355339 -0.35355339 -0.61237244 0.61237244 base_link cam0_link
+          - ros2 run tf2_ros static_transform_publisher 0 0 0 1 0 0 0 global global_ned & ros2 run tf2_ros static_transform_publisher -0.010360 0.252312 -0.206836 -0.3462856 -0.3567783 0.6153622 -0.6116574 imu base_link & ros2 run tf2_ros static_transform_publisher -0.15 0 0.20 0.35355339 -0.35355339 -0.61237244 0.61237244 base_link cam0_link
