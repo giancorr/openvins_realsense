@@ -41,4 +41,4 @@ windows:
 
       # --- [Pane 3] Static TF Tree ---
       - shell_command:
-          - ros2 run tf2_ros static_transform_publisher 0 0 0 0 0 0 1 global global_ned & ros2 run tf2_ros static_transform_publisher 0 -0.15 -0.13 0.5 0.5 0.5 -0.5 imu base_link & ros2 run tf2_ros static_transform_publisher 0.13 0 0.15 0.5 0.5 0.5 0.5 base_link cam0_link & ros2 run tf2_ros static_transform_publisher -0.15 0 0.19 -0.35355339 0.35355339 0.61237244 -0.61237244 base_link cam1_link
+          - ros2 run tf2_ros static_transform_publisher 0 -0.15 -0.13 0.5 0.5 0.5 -0.5 imu base_link & ros2 run tf2_ros static_transform_publisher 0.13 0 0.15 0.5 0.5 0.5 0.5 base_link cam0_link & ros2 run tf2_ros static_transform_publisher -0.15 0 0.19 -0.35355339 0.35355339 0.61237244 -0.61237244 base_link cam1_link

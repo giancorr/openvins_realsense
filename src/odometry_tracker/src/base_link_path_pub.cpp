@@ -21,7 +21,13 @@ public:
         tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
         tf_static_broadcaster_ = std::make_shared<tf2_ros::StaticTransformBroadcaster>(this);
 
-        path_msg_.header.frame_id = "odom";
+        path_msg_.header.frame_id = "map";
+
+        // ENU-to-NED rotation (rotX 180°), applied internally
+        tf2::Quaternion q_ned;
+        q_ned.setRPY(M_PI, 0.0, 0.0);
+        T_enu_to_ned_.setRotation(q_ned);
+        T_enu_to_ned_.setOrigin(tf2::Vector3(0, 0, 0));
 
         // Main Processing Loop
         timer_ = this->create_wall_timer(
@@ -36,9 +42,9 @@ private:
     {
         geometry_msgs::msg::TransformStamped transform;
         try {
-            // Retrieve current global_ned -> base_link transform
+            // Retrieve current global -> base_link transform
             transform = tf_buffer_->lookupTransform(
-                "global_ned", "base_link", tf2::TimePointZero);
+                "global", "base_link", tf2::TimePointZero);
         } catch (const tf2::TransformException &ex) {
             return;
         }
@@ -46,47 +52,52 @@ private:
         tf2::Transform T_global_base;
         tf2::fromMsg(transform.transform, T_global_base);
 
+        // Convert to NED coordinates internally
+        tf2::Transform T_ned_base = T_enu_to_ned_.inverse() * T_global_base;
+
         // Zeroing Mechanism (Initialization)
         if (first_msg_) {
-            tf2::Matrix3x3 m(T_global_base.getRotation());
+            tf2::Matrix3x3 m(T_ned_base.getRotation());
             double roll, pitch, yaw;
             m.getRPY(roll, pitch, yaw);
 
             // Create initial pose removing pitch and roll (keeping horizontal alignment)
             tf2::Quaternion q_yaw;
             q_yaw.setRPY(0.0, 0.0, yaw);
-            T_init_.setRotation(q_yaw);
-            T_init_.setOrigin(T_global_base.getOrigin());
+            T_init_ned_.setRotation(q_yaw);
+            T_init_ned_.setOrigin(T_ned_base.getOrigin());
 
-            // Broadcast the odometry origin frame to the TF tree
+            // Publish map as child of global (baking in the NED rotation)
+            tf2::Transform T_global_map = T_enu_to_ned_ * T_init_ned_;
+
             geometry_msgs::msg::TransformStamped t;
             t.header.stamp = transform.header.stamp;
-            t.header.frame_id = "global_ned";
-            t.child_frame_id = "odom";
-            t.transform.translation.x = T_init_.getOrigin().x();
-            t.transform.translation.y = T_init_.getOrigin().y();
-            t.transform.translation.z = T_init_.getOrigin().z();
-            t.transform.rotation.x = q_yaw.x();
-            t.transform.rotation.y = q_yaw.y();
-            t.transform.rotation.z = q_yaw.z();
-            t.transform.rotation.w = q_yaw.w();
+            t.header.frame_id = "global";
+            t.child_frame_id = "map";
+            t.transform.translation.x = T_global_map.getOrigin().x();
+            t.transform.translation.y = T_global_map.getOrigin().y();
+            t.transform.translation.z = T_global_map.getOrigin().z();
+            t.transform.rotation.x = T_global_map.getRotation().x();
+            t.transform.rotation.y = T_global_map.getRotation().y();
+            t.transform.rotation.z = T_global_map.getRotation().z();
+            t.transform.rotation.w = T_global_map.getRotation().w();
             tf_static_broadcaster_->sendTransform(t);
 
             first_msg_ = false;
         }
 
-        // Calculate Odometry (Pose relative to starting point)
-        tf2::Transform T_odom_base = T_init_.inverse() * T_global_base;
+        // Calculate Odometry (Pose relative to starting point in NED)
+        tf2::Transform T_map_base = T_init_ned_.inverse() * T_ned_base;
 
         geometry_msgs::msg::PoseStamped pose;
         pose.header.stamp = this->get_clock()->now();
-        pose.header.frame_id = "odom";
+        pose.header.frame_id = "map";
         
-        pose.pose.position.x = T_odom_base.getOrigin().x();
-        pose.pose.position.y = T_odom_base.getOrigin().y();
-        pose.pose.position.z = T_odom_base.getOrigin().z();
+        pose.pose.position.x = T_map_base.getOrigin().x();
+        pose.pose.position.y = T_map_base.getOrigin().y();
+        pose.pose.position.z = T_map_base.getOrigin().z();
 
-        tf2::Quaternion q_out = T_odom_base.getRotation();
+        tf2::Quaternion q_out = T_map_base.getRotation();
         pose.pose.orientation.x = q_out.x();
         pose.pose.orientation.y = q_out.y();
         pose.pose.orientation.z = q_out.z();
@@ -111,9 +122,12 @@ private:
     nav_msgs::msg::Path path_msg_;
     rclcpp::TimerBase::SharedPtr timer_;
 
-    // Initialization flags
+    // ENU-to-NED conversion (rotX 180°)
+    tf2::Transform T_enu_to_ned_;
+
+    // Initialization
     bool first_msg_ = true;
-    tf2::Transform T_init_;
+    tf2::Transform T_init_ned_;
 };
 
 int main(int argc, char **argv)

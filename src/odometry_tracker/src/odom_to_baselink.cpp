@@ -41,11 +41,11 @@ public:
         T_imu_back_base_.setRotation(q_back);
         T_imu_back_base_.setOrigin(tf2::Vector3(0.0, -0.089545, -0.224904));
 
-        // --- Static transform: global -> global_ned ---
+        // --- ENU-to-NED conversion (rotX 180°), applied internally ---
         tf2::Quaternion q_ned;
         q_ned.setRPY(M_PI, 0.0, 0.0);
-        T_global_global_ned_.setRotation(q_ned);
-        T_global_global_ned_.setOrigin(tf2::Vector3(0, 0, 0));
+        T_enu_to_ned_.setRotation(q_ned);
+        T_enu_to_ned_.setOrigin(tf2::Vector3(0, 0, 0));
 
         RCLCPP_INFO(this->get_logger(), "OdomToBaselinkNode started. Listening to OpenVINS odometry...");
     }
@@ -79,15 +79,13 @@ private:
 
     void initialize_odom_frame(const std::string& session_type, const nav_msgs::msg::Odometry& out_msg)
     {
-        // We use the first output Odometry (which is global -> base_link) to define the 'odom' frame
-        // 'odom' represents the starting position and yaw of 'base_link' in the global_ned frame.
-        
+        // Convert odometry (global -> base_link) to NED, then define the 'map' frame
         tf2::Transform T_global_base;
         tf2::fromMsg(out_msg.pose.pose, T_global_base);
 
-        tf2::Transform T_global_ned_base = T_global_global_ned_.inverse() * T_global_base;
+        tf2::Transform T_ned_base = T_enu_to_ned_.inverse() * T_global_base;
 
-        tf2::Matrix3x3 m(T_global_ned_base.getRotation());
+        tf2::Matrix3x3 m(T_ned_base.getRotation());
         double roll, pitch, yaw;
         m.getRPY(roll, pitch, yaw);
 
@@ -96,32 +94,35 @@ private:
 
         if (session_type == "front") {
             T_init_front_.setRotation(q_yaw);
-            T_init_front_.setOrigin(T_global_ned_base.getOrigin());
-            publish_static_odom(T_init_front_, out_msg.header.stamp);
+            T_init_front_.setOrigin(T_ned_base.getOrigin());
+            publish_static_map(T_init_front_, out_msg.header.stamp);
             RCLCPP_INFO(this->get_logger(), "Zeroing complete for FRONT session.");
         } else {
             T_init_back_.setRotation(q_yaw);
-            T_init_back_.setOrigin(T_global_ned_base.getOrigin());
-            publish_static_odom(T_init_back_, out_msg.header.stamp);
+            T_init_back_.setOrigin(T_ned_base.getOrigin());
+            publish_static_map(T_init_back_, out_msg.header.stamp);
             RCLCPP_INFO(this->get_logger(), "Zeroing complete for BACK session.");
         }
     }
 
-    void publish_static_odom(const tf2::Transform& T_init, const builtin_interfaces::msg::Time& stamp)
+    void publish_static_map(const tf2::Transform& T_init_ned, const builtin_interfaces::msg::Time& stamp)
     {
+        // Compose: T_global_map = T_enu_to_ned * T_init_ned (bake NED rotation into map frame)
+        tf2::Transform T_global_map = T_enu_to_ned_ * T_init_ned;
+
         geometry_msgs::msg::TransformStamped t;
         t.header.stamp = stamp;
-        t.header.frame_id = "global_ned";
-        t.child_frame_id = "odom";
+        t.header.frame_id = "global";
+        t.child_frame_id = "map";
         
-        t.transform.translation.x = T_init.getOrigin().x();
-        t.transform.translation.y = T_init.getOrigin().y();
-        t.transform.translation.z = T_init.getOrigin().z();
+        t.transform.translation.x = T_global_map.getOrigin().x();
+        t.transform.translation.y = T_global_map.getOrigin().y();
+        t.transform.translation.z = T_global_map.getOrigin().z();
         
-        t.transform.rotation.x = T_init.getRotation().x();
-        t.transform.rotation.y = T_init.getRotation().y();
-        t.transform.rotation.z = T_init.getRotation().z();
-        t.transform.rotation.w = T_init.getRotation().w();
+        t.transform.rotation.x = T_global_map.getRotation().x();
+        t.transform.rotation.y = T_global_map.getRotation().y();
+        t.transform.rotation.z = T_global_map.getRotation().z();
+        t.transform.rotation.w = T_global_map.getRotation().w();
         
         tf_static_broadcaster_->sendTransform(t);
     }
@@ -190,7 +191,7 @@ private:
     // Static transforms
     tf2::Transform T_imu_front_base_;  
     tf2::Transform T_imu_back_base_;   
-    tf2::Transform T_global_global_ned_;
+    tf2::Transform T_enu_to_ned_;
 
     // Zeroing
     bool first_msg_front_ = true;
