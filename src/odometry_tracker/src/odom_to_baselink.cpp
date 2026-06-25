@@ -31,15 +31,15 @@ public:
         tf_static_broadcaster_ = std::make_shared<tf2_ros::StaticTransformBroadcaster>(this);
 
         // --- Static transform: cam0 IMU -> base_link ---
-        tf2::Quaternion q_front(-0.5, -0.5, -0.5, 0.5);
+        tf2::Quaternion q_front(0.5, 0.5, 0.5, -0.5);
         T_imu_front_base_.setRotation(q_front);
-        T_imu_front_base_.setOrigin(tf2::Vector3(0.0, -0.14, -0.12));
+        T_imu_front_base_.setOrigin(tf2::Vector3(0.0, -0.15, -0.13));
 
         // --- Static transform: cam1 IMU -> base_link ---
-        // Physical values provided by the user for the back_session
-        tf2::Quaternion q_back(-0.3462856, -0.3567783, 0.6153622, -0.6116574);
+        // Derived from: 15cm behind, 19cm below, yaw 180°, pitch 30° down
+        tf2::Quaternion q_back(-0.35355339, 0.35355339, 0.61237244, 0.61237244);
         T_imu_back_base_.setRotation(q_back);
-        T_imu_back_base_.setOrigin(tf2::Vector3(-0.010360, 0.252312, -0.206836));
+        T_imu_back_base_.setOrigin(tf2::Vector3(0.0, -0.089545, -0.224904));
 
         // --- Static transform: global -> global_ned ---
         tf2::Quaternion q_ned;
