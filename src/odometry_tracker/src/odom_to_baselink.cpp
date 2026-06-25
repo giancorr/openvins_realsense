@@ -43,10 +43,10 @@ public:
         T_imu_front_base_.setOrigin(tf2::Vector3(0.0, -0.14, -0.12));
 
         // Static transform: cam1 IMU -> base_link
-        // Quaternione ricalcolato per mappare esattamente l'IMU posteriore in una terna locale NED.
-        tf2::Quaternion q_back(-0.5, 0.5, 0.5, 0.5);
+        // Inverso esatto di base_link -> cam1_link
+        tf2::Quaternion q_back(-0.61237242, 0.61237242, 0.35355341, -0.35355341);
         T_imu_back_base_.setRotation(q_back);
-        T_imu_back_base_.setOrigin(tf2::Vector3(0.0, -0.20, -0.15));
+        T_imu_back_base_.setOrigin(tf2::Vector3(0.173205, -0.15, 0.10));
 
         // Static transform: global -> global_ned 
         // Static transform: global -> global_ned 
@@ -75,10 +75,25 @@ private:
             msg->pose.pose.position.x, msg->pose.pose.position.y, msg->pose.pose.position.z));
 
         tf2::Transform T_raw = T_ovglobal_imu * T_imu_front_base_;
-
         tf2::Transform T_global_base = T_global_globalned_front_ * T_raw;
 
-        auto out = build_output_msg(msg, T_global_base, T_imu_front_base_);
+        // Inizializzazione della posa a (0,0,0) mantenendo NED
+        if (first_msg_front_) {
+            tf2::Matrix3x3 m(T_global_base.getRotation());
+            double roll, pitch, yaw;
+            m.getRPY(roll, pitch, yaw);
+            
+            tf2::Quaternion q_yaw;
+            q_yaw.setRPY(0.0, 0.0, yaw);
+            T_init_front_.setRotation(q_yaw);
+            T_init_front_.setOrigin(T_global_base.getOrigin());
+            first_msg_front_ = false;
+        }
+
+        tf2::Transform T_odom_base = T_init_front_.inverse() * T_global_base;
+
+        auto out = build_output_msg(msg, T_odom_base, T_imu_front_base_);
+        out.header.frame_id = "odom"; // Il nuovo frame di origine
         pub_front_->publish(out);
     }
 
@@ -92,10 +107,24 @@ private:
             msg->pose.pose.position.x, msg->pose.pose.position.y, msg->pose.pose.position.z));
 
         tf2::Transform T_raw = T_ovglobal_imu * T_imu_back_base_;
-
         tf2::Transform T_global_base = T_global_globalned_back_ * T_raw;
 
-        auto out = build_output_msg(msg, T_global_base, T_imu_back_base_);
+        if (first_msg_back_) {
+            tf2::Matrix3x3 m(T_global_base.getRotation());
+            double roll, pitch, yaw;
+            m.getRPY(roll, pitch, yaw);
+            
+            tf2::Quaternion q_yaw;
+            q_yaw.setRPY(0.0, 0.0, yaw);
+            T_init_back_.setRotation(q_yaw);
+            T_init_back_.setOrigin(T_global_base.getOrigin());
+            first_msg_back_ = false;
+        }
+
+        tf2::Transform T_odom_base = T_init_back_.inverse() * T_global_base;
+
+        auto out = build_output_msg(msg, T_odom_base, T_imu_back_base_);
+        out.header.frame_id = "odom"; // Il nuovo frame di origine
         pub_back_->publish(out);
     }
 
@@ -158,6 +187,12 @@ private:
     tf2::Transform T_imu_back_base_;   
     tf2::Transform T_global_globalned_front_; 
     tf2::Transform T_global_globalned_back_;  
+
+    // Zeroing
+    bool first_msg_front_ = true;
+    bool first_msg_back_ = true;
+    tf2::Transform T_init_front_;
+    tf2::Transform T_init_back_;
 
     // Publishers & Subscribers
     rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr pub_front_;

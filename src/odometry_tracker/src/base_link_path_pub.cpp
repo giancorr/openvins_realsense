@@ -15,7 +15,7 @@ public:
         pose_publisher_ = this->create_publisher<geometry_msgs::msg::PoseStamped>("/base_link_pose", 10);
         tf_buffer_ = std::make_shared<tf2_ros::Buffer>(this->get_clock());
         tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
-        path_msg_.header.frame_id = "global_ned";
+        path_msg_.header.frame_id = "odom";
         timer_ = this->create_wall_timer(
             std::chrono::milliseconds(50),  // 20 Hz
             std::bind(&BaseLinkPathPublisher::timer_callback, this));
@@ -34,13 +34,35 @@ private:
             return;
         }
 
+        tf2::Transform T_global_base;
+        tf2::fromMsg(transform.transform, T_global_base);
+
+        if (first_msg_) {
+            tf2::Matrix3x3 m(T_global_base.getRotation());
+            double roll, pitch, yaw;
+            m.getRPY(roll, pitch, yaw);
+            
+            tf2::Quaternion q_yaw;
+            q_yaw.setRPY(0.0, 0.0, yaw);
+            T_init_.setRotation(q_yaw);
+            T_init_.setOrigin(T_global_base.getOrigin());
+            first_msg_ = false;
+        }
+
+        tf2::Transform T_odom_base = T_init_.inverse() * T_global_base;
+
         geometry_msgs::msg::PoseStamped pose;
         pose.header.stamp = this->get_clock()->now();
-        pose.header.frame_id = "global_ned";
-        pose.pose.position.x = transform.transform.translation.x;
-        pose.pose.position.y = transform.transform.translation.y;
-        pose.pose.position.z = transform.transform.translation.z;
-        pose.pose.orientation = transform.transform.rotation;
+        pose.header.frame_id = "odom";
+        pose.pose.position.x = T_odom_base.getOrigin().x();
+        pose.pose.position.y = T_odom_base.getOrigin().y();
+        pose.pose.position.z = T_odom_base.getOrigin().z();
+        
+        tf2::Quaternion q_out = T_odom_base.getRotation();
+        pose.pose.orientation.x = q_out.x();
+        pose.pose.orientation.y = q_out.y();
+        pose.pose.orientation.z = q_out.z();
+        pose.pose.orientation.w = q_out.w();
 
         path_msg_.poses.push_back(pose);
         path_msg_.header.stamp = transform.header.stamp;
@@ -54,6 +76,10 @@ private:
     std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
     nav_msgs::msg::Path path_msg_;
     rclcpp::TimerBase::SharedPtr timer_;
+
+    // Zeroing
+    bool first_msg_ = true;
+    tf2::Transform T_init_;
 };
 
 int main(int argc, char **argv)
