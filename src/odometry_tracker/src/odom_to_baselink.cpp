@@ -45,10 +45,10 @@ public:
         T_imu_front_base_.setOrigin(tf2::Vector3(0.0, -0.14, -0.12));
 
         // Static transform: cam1 IMU -> base_link
-        // Inverso esatto di base_link -> cam1_link
-        tf2::Quaternion q_back(-0.61237242, 0.61237242, 0.35355341, -0.35355341);
+        // Inverso esatto di base_link -> cam0_link della back_session
+        tf2::Quaternion q_back(-0.35355339, 0.35355339, 0.61237244, 0.61237244);
         T_imu_back_base_.setRotation(q_back);
-        T_imu_back_base_.setOrigin(tf2::Vector3(0.173205, -0.15, 0.10));
+        T_imu_back_base_.setOrigin(tf2::Vector3(0.0, -0.09820508, -0.22990381));
 
         // Static transform: global -> global_ned 
         // Static transform: global -> global_ned 
