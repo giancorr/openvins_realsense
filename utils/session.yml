@@ -9,36 +9,36 @@ windows:
   - window_name: algorithms
     layout: tiled
     panes:
-      # Riquadro 1: OpenVINS
+      # --- [Pane 1] OpenVINS VIO (Algorithm) ---
       - shell_command:
-          - sleep 3 # Aspetta che le telecamere si accendano
+          - sleep 3
           - ros2 launch openvins_bringup launch_openvins.launch.py
-      
-      # Riquadro 2: RViz2
+
+      # --- [Pane 2] RViz2 Visualization ---
       - shell_command:
-          - sleep 5 # Aspetta che l'algoritmo sia partito
+          - sleep 5
           - ros2 run rviz2 rviz2 -d $(ros2 pkg prefix openvins_bringup)/share/openvins_bringup/config/single.rviz
-          
-      # Riquadro 3: Path Publisher (base_link) - C++
+
+      # --- [Pane 3] Odometry & Path Publisher (C++) ---
       - shell_command:
-          - sleep 6 # Aspetta l'avvio delle TF
+          - sleep 6
           - ros2 run odometry_tracker base_link_path_pub
-          
-      # Riquadro 4: Terminale vuoto per test
+
+      # --- [Pane 4] Debug Terminal ---
       - shell_command:
           - clear
 
   - window_name: drivers
     layout: tiled
     panes:
-      # Riquadro 1: Telecamera 1 (cam0) - Main with IMU
+      # --- [Pane 1] Front Camera Driver (cam0) ---
       - shell_command:
           - ros2 launch realsense2_camera rs_launch.py camera_name:=cam0 enable_fisheye1:=true enable_fisheye2:=true enable_pose:=false enable_gyro:=true enable_accel:=true unite_imu_method:="2"
-      
-      # Riquadro 2: Terminale vuoto per debug
+
+      # --- [Pane 2] Debug Terminal ---
       - shell_command:
           - clear
-          
-      # Riquadro 3: TF Tree (base_link=NED, cam Z=fuori dalla lente, global_ned=NED)
+
+      # --- [Pane 3] Static TF Tree ---
       - shell_command:
           - ros2 run tf2_ros static_transform_publisher 0 0 0 1 0 0 0 global global_ned & ros2 run tf2_ros static_transform_publisher 0.0 -0.14 -0.12 -0.5 -0.5 -0.5 0.5 imu base_link & ros2 run tf2_ros static_transform_publisher 0.12 0 0.14 0.5 0.5 0.5 0.5 base_link cam0_link & ros2 run tf2_ros static_transform_publisher -0.15 0 0.20 -0.6123724 0.6123724 0.3535534 0.3535534 base_link cam1_link

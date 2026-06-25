@@ -9,41 +9,41 @@ windows:
   - window_name: algorithms
     layout: tiled
     panes:
-      # Riquadro 1: Dual OpenVINS (front + back)
+      # --- [Pane 1] Dual OpenVINS (front + back) ---
       - shell_command:
-          - sleep 3 # Aspetta che le telecamere si accendano
+          - sleep 3
           - ros2 launch openvins_bringup launch_openvins_dual.launch.py
-      
-      # Riquadro 2: RViz2
+
+      # --- [Pane 2] RViz2 Visualization ---
       - shell_command:
-          - sleep 5 # Aspetta che l'algoritmo sia partito
-          - ros2 run rviz2 rviz2 -d $(ros2 pkg prefix openvins_bringup)/share/openvins_bringup/config/default.rviz
-          
-      # Riquadro 3: Odom to Baselink converter + EKF
+          - sleep 5
+          - ros2 run rviz2 rviz2 -d $(ros2 pkg prefix openvins_bringup)/share/openvins_bringup/config/single.rviz
+
+      # --- [Pane 3] Odom to Baselink Converter & EKF Fusion ---
       - shell_command:
-          - sleep 6 # Aspetta l'avvio di OpenVINS
+          - sleep 6
           - ros2 run odometry_tracker odom_to_baselink & ros2 run robot_localization ekf_node --ros-args --params-file $(ros2 pkg prefix openvins_bringup)/share/openvins_bringup/config/ekf.yaml
-          
-      # Riquadro 4: Path Publisher (base_link fusa) - C++
+
+      # --- [Pane 4] Path Publisher (Fused base_link) ---
       - shell_command:
-          - sleep 8 # Aspetta l'avvio dell'EKF
+          - sleep 8
           - ros2 run odometry_tracker base_link_path_pub
 
   - window_name: drivers
     layout: tiled
     panes:
-      # Riquadro 1: Telecamera 1 (cam0) - con IMU
+      # --- [Pane 1] Front Camera Driver (cam0) ---
       - shell_command:
           - ros2 launch realsense2_camera rs_launch.py camera_name:=cam0 serial_no:="'905312111404'" enable_fisheye1:=true enable_fisheye2:=true enable_pose:=false enable_gyro:=true enable_accel:=true unite_imu_method:="2" publish_tf:=false tf_publish_rate:=0.0
-      
-      # Riquadro 2: Telecamera 2 (cam1) - con IMU (abilitato!)
+
+      # --- [Pane 2] Back Camera Driver (cam1) ---
       - shell_command:
           - ros2 launch realsense2_camera rs_launch.py camera_name:=cam1 serial_no:="'146322110430'" enable_fisheye1:=true enable_fisheye2:=true enable_pose:=false enable_gyro:=true enable_accel:=true unite_imu_method:="2" publish_tf:=false tf_publish_rate:=0.0
-          
-      # Riquadro 3: TF Tree (global=ENU, global_ned=NED, base_link=NED fusa)
-      - shell_command:
-          - ros2 run tf2_ros static_transform_publisher 0 0 0 0 1 0 0 global global_ned & ros2 run tf2_ros static_transform_publisher 0.008649 0.144703 -0.103955 0.5047690 -0.4984747 0.4937537 0.5029300 imu base_link & ros2 run tf2_ros static_transform_publisher 0.12 0 0.14 0.5 0.5 0.5 0.5 base_link cam0_link & ros2 run tf2_ros static_transform_publisher -0.15 0 0.20 0.35355339 -0.35355339 -0.61237244 0.61237244 base_link cam1_link
 
-      # Riquadro 4: Terminale vuoto per debug
+      # --- [Pane 3] Static TF Tree ---
+      - shell_command:
+          - ros2 run tf2_ros static_transform_publisher 0 0 0 1 0 0 0 global global_ned & ros2 run tf2_ros static_transform_publisher 0.0 -0.14 -0.12 -0.5 -0.5 -0.5 0.5 imu base_link & ros2 run tf2_ros static_transform_publisher 0.12 0 0.14 0.5 0.5 0.5 0.5 base_link cam0_link & ros2 run tf2_ros static_transform_publisher -0.15 0 0.20 -0.61237242 0.61237242 0.35355341 0.35355341 base_link cam1_link
+
+      # --- [Pane 4] Debug Terminal ---
       - shell_command:
           - clear

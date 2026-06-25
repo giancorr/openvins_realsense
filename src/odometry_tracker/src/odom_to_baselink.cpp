@@ -1,174 +1,143 @@
-// odom_to_baselink: transforms two IMU odometries to base_link odometries.
-//
-// Subscribes to:
-//   /front/odomimu  (nav_msgs/Odometry, global_front -> imu_front)
-//   /back/odomimu   (nav_msgs/Odometry, global_back  -> imu_back)
-//
-// Publishes:
-//   /front/base_link_odom  (nav_msgs/Odometry, odom -> base_link)
-//   /back/base_link_odom   (nav_msgs/Odometry, odom -> base_link)
-//
-// Each odometry is transformed from its IMU frame to base_link using
-// the known static transform (different for front and back IMU).
-
 #include <rclcpp/rclcpp.hpp>
 #include <nav_msgs/msg/odometry.hpp>
-#include <tf2/LinearMath/Quaternion.h>
+#include <tf2_ros/buffer.h>
+#include <tf2_ros/transform_listener.h>
 #include <tf2/LinearMath/Transform.h>
-#include <tf2/LinearMath/Matrix3x3.h>
+#include <tf2/LinearMath/Quaternion.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 #include <tf2_ros/static_transform_broadcaster.h>
-#include <geometry_msgs/msg/transform_stamped.hpp>
 
-class OdomToBaselink : public rclcpp::Node
+class OdomToBaselinkNode : public rclcpp::Node
 {
 public:
-    OdomToBaselink() : Node("odom_to_baselink")
+    OdomToBaselinkNode() : Node("odom_to_baselink_node")
     {
-        // Publishers
-        pub_front_ = this->create_publisher<nav_msgs::msg::Odometry>(
-            "/front/base_link_odom", 10);
-        pub_back_ = this->create_publisher<nav_msgs::msg::Odometry>(
-            "/back/base_link_odom", 10);
 
-        // Subscribers
-        sub_front_ = this->create_subscription<nav_msgs::msg::Odometry>(
+        // Publishers & Subscribers
+        odom_front_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
             "/front/odomimu", 10,
-            std::bind(&OdomToBaselink::front_callback, this, std::placeholders::_1));
-        sub_back_ = this->create_subscription<nav_msgs::msg::Odometry>(
-            "/back/odomimu", 10,
-            std::bind(&OdomToBaselink::back_callback, this, std::placeholders::_1));
+            std::bind(&OdomToBaselinkNode::odom_front_callback, this, std::placeholders::_1));
 
-        // Static transform: cam0 IMU -> base_link
-        // Quaternione ricalcolato per mappare esattamente l'IMU in una terna locale NED.
+        odom_back_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
+            "/back/odomimu", 10,
+            std::bind(&OdomToBaselinkNode::odom_back_callback, this, std::placeholders::_1));
+
+        odom_front_pub_ = this->create_publisher<nav_msgs::msg::Odometry>("/front/base_link_odom", 10);
+        odom_back_pub_  = this->create_publisher<nav_msgs::msg::Odometry>("/back/base_link_odom", 10);
+
+        // TF Setup
+        tf_buffer_ = std::make_shared<tf2_ros::Buffer>(this->get_clock());
+        tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+        tf_static_broadcaster_ = std::make_shared<tf2_ros::StaticTransformBroadcaster>(this);
+
+        // --- Static transform: cam0 IMU -> base_link ---
         tf2::Quaternion q_front(-0.5, -0.5, -0.5, 0.5);
         T_imu_front_base_.setRotation(q_front);
         T_imu_front_base_.setOrigin(tf2::Vector3(0.0, -0.14, -0.12));
 
-        // Static transform: cam1 IMU -> base_link
-        // Valori fisici originali calcolati dall'utente per la back_session
+        // --- Static transform: cam1 IMU -> base_link ---
+        // Physical values provided by the user for the back_session
         tf2::Quaternion q_back(-0.3462856, -0.3567783, 0.6153622, -0.6116574);
         T_imu_back_base_.setRotation(q_back);
         T_imu_back_base_.setOrigin(tf2::Vector3(-0.010360, 0.252312, -0.206836));
 
-        // Static transform: global -> global_ned 
-        // Static transform: global -> global_ned 
-        // IL SUPERVISORE HA RAGIONE: Le terne globali non si toccano. Sempre RotX(180).
-        tf2::Quaternion q_global_ned(1.0, 0.0, 0.0, 0.0);
-        
-        T_global_globalned_front_.setRotation(q_global_ned);
-        T_global_globalned_front_.setOrigin(tf2::Vector3(0.0, 0.0, 0.0));
+        // --- Static transform: global -> global_ned ---
+        tf2::Quaternion q_ned;
+        q_ned.setRPY(M_PI, 0.0, 0.0);
+        T_global_global_ned_.setRotation(q_ned);
+        T_global_global_ned_.setOrigin(tf2::Vector3(0, 0, 0));
 
-        T_global_globalned_back_.setRotation(q_global_ned);
-        T_global_globalned_back_.setOrigin(tf2::Vector3(0.0, 0.0, 0.0));
-
-        tf_static_broadcaster_ = std::make_shared<tf2_ros::StaticTransformBroadcaster>(this);
-
-        // CORREZIONE RIMOSSA: Applichiamo solo la logica pura sui quaternioni locali.
-        RCLCPP_INFO(this->get_logger(),
-            "odom_to_baselink started: transforming IMU odometries to base_link in global_ned");
+        RCLCPP_INFO(this->get_logger(), "OdomToBaselinkNode started. Listening to OpenVINS odometry...");
     }
 
 private:
-    void front_callback(const nav_msgs::msg::Odometry::SharedPtr msg)
+    void odom_front_callback(const nav_msgs::msg::Odometry::SharedPtr msg)
     {
-        tf2::Transform T_ovglobal_imu;
-        T_ovglobal_imu.setRotation(tf2::Quaternion(
-            msg->pose.pose.orientation.x, msg->pose.pose.orientation.y,
-            msg->pose.pose.orientation.z, msg->pose.pose.orientation.w));
-        T_ovglobal_imu.setOrigin(tf2::Vector3(
-            msg->pose.pose.position.x, msg->pose.pose.position.y, msg->pose.pose.position.z));
+        // Process Odometry
+        auto out_msg = transform_odometry(msg, T_imu_front_base_);
+        odom_front_pub_->publish(out_msg);
 
-        tf2::Transform T_raw = T_ovglobal_imu * T_imu_front_base_;
-        tf2::Transform T_global_base = T_global_globalned_front_ * T_raw;
-
-        // Inizializzazione della posa a (0,0,0) mantenendo NED
+        // Zeroing mechanism on the first message
         if (first_msg_front_) {
-            tf2::Matrix3x3 m(T_global_base.getRotation());
-            double roll, pitch, yaw;
-            m.getRPY(roll, pitch, yaw);
-            
-            tf2::Quaternion q_yaw;
-            q_yaw.setRPY(0.0, 0.0, yaw);
-            T_init_front_.setRotation(q_yaw);
-            T_init_front_.setOrigin(T_global_base.getOrigin());
-            
-            geometry_msgs::msg::TransformStamped t;
-            t.header.stamp = msg->header.stamp;
-            t.header.frame_id = "global_ned";
-            t.child_frame_id = "odom";
-            t.transform.translation.x = T_init_front_.getOrigin().x();
-            t.transform.translation.y = T_init_front_.getOrigin().y();
-            t.transform.translation.z = T_init_front_.getOrigin().z();
-            t.transform.rotation.x = q_yaw.x();
-            t.transform.rotation.y = q_yaw.y();
-            t.transform.rotation.z = q_yaw.z();
-            t.transform.rotation.w = q_yaw.w();
-            tf_static_broadcaster_->sendTransform(t);
-
+            initialize_odom_frame("front", out_msg);
             first_msg_front_ = false;
         }
-
-        tf2::Transform T_odom_base = T_init_front_.inverse() * T_global_base;
-
-        auto out = build_output_msg(msg, T_odom_base, T_imu_front_base_);
-        out.header.frame_id = "odom"; // Il nuovo frame di origine
-        pub_front_->publish(out);
     }
 
-    void back_callback(const nav_msgs::msg::Odometry::SharedPtr msg)
+    void odom_back_callback(const nav_msgs::msg::Odometry::SharedPtr msg)
     {
-        tf2::Transform T_ovglobal_imu;
-        T_ovglobal_imu.setRotation(tf2::Quaternion(
-            msg->pose.pose.orientation.x, msg->pose.pose.orientation.y,
-            msg->pose.pose.orientation.z, msg->pose.pose.orientation.w));
-        T_ovglobal_imu.setOrigin(tf2::Vector3(
-            msg->pose.pose.position.x, msg->pose.pose.position.y, msg->pose.pose.position.z));
+        // Process Odometry
+        auto out_msg = transform_odometry(msg, T_imu_back_base_);
+        odom_back_pub_->publish(out_msg);
 
-        tf2::Transform T_raw = T_ovglobal_imu * T_imu_back_base_;
-        tf2::Transform T_global_base = T_global_globalned_back_ * T_raw;
-
+        // Zeroing mechanism on the first message
         if (first_msg_back_) {
-            tf2::Matrix3x3 m(T_global_base.getRotation());
-            double roll, pitch, yaw;
-            m.getRPY(roll, pitch, yaw);
-            
-            tf2::Quaternion q_yaw;
-            q_yaw.setRPY(0.0, 0.0, yaw);
-            T_init_back_.setRotation(q_yaw);
-            T_init_back_.setOrigin(T_global_base.getOrigin());
-
-            geometry_msgs::msg::TransformStamped t;
-            t.header.stamp = msg->header.stamp;
-            t.header.frame_id = "global_ned";
-            t.child_frame_id = "odom";
-            t.transform.translation.x = T_init_back_.getOrigin().x();
-            t.transform.translation.y = T_init_back_.getOrigin().y();
-            t.transform.translation.z = T_init_back_.getOrigin().z();
-            t.transform.rotation.x = q_yaw.x();
-            t.transform.rotation.y = q_yaw.y();
-            t.transform.rotation.z = q_yaw.z();
-            t.transform.rotation.w = q_yaw.w();
-            tf_static_broadcaster_->sendTransform(t);
-
+            initialize_odom_frame("back", out_msg);
             first_msg_back_ = false;
         }
-
-        tf2::Transform T_odom_base = T_init_back_.inverse() * T_global_base;
-
-        auto out = build_output_msg(msg, T_odom_base, T_imu_back_base_);
-        out.header.frame_id = "odom"; // Il nuovo frame di origine
-        pub_back_->publish(out);
     }
 
-    nav_msgs::msg::Odometry build_output_msg(
-        const nav_msgs::msg::Odometry::SharedPtr& msg,
-        const tf2::Transform& T_global_base,
-        const tf2::Transform& T_imu_base)
+    void initialize_odom_frame(const std::string& session_type, const nav_msgs::msg::Odometry& out_msg)
     {
-        // Build output message
+        // We use the first output Odometry (which is global -> base_link) to define the 'odom' frame
+        // 'odom' represents the starting position and yaw of 'base_link' in the global_ned frame.
+        
+        tf2::Transform T_global_base;
+        tf2::fromMsg(out_msg.pose.pose, T_global_base);
+
+        tf2::Transform T_global_ned_base = T_global_global_ned_.inverse() * T_global_base;
+
+        tf2::Matrix3x3 m(T_global_ned_base.getRotation());
+        double roll, pitch, yaw;
+        m.getRPY(roll, pitch, yaw);
+
+        tf2::Quaternion q_yaw;
+        q_yaw.setRPY(0.0, 0.0, yaw);
+
+        if (session_type == "front") {
+            T_init_front_.setRotation(q_yaw);
+            T_init_front_.setOrigin(T_global_ned_base.getOrigin());
+            publish_static_odom(T_init_front_, out_msg.header.stamp);
+            RCLCPP_INFO(this->get_logger(), "Zeroing complete for FRONT session.");
+        } else {
+            T_init_back_.setRotation(q_yaw);
+            T_init_back_.setOrigin(T_global_ned_base.getOrigin());
+            publish_static_odom(T_init_back_, out_msg.header.stamp);
+            RCLCPP_INFO(this->get_logger(), "Zeroing complete for BACK session.");
+        }
+    }
+
+    void publish_static_odom(const tf2::Transform& T_init, const builtin_interfaces::msg::Time& stamp)
+    {
+        geometry_msgs::msg::TransformStamped t;
+        t.header.stamp = stamp;
+        t.header.frame_id = "global_ned";
+        t.child_frame_id = "odom";
+        
+        t.transform.translation.x = T_init.getOrigin().x();
+        t.transform.translation.y = T_init.getOrigin().y();
+        t.transform.translation.z = T_init.getOrigin().z();
+        
+        t.transform.rotation.x = T_init.getRotation().x();
+        t.transform.rotation.y = T_init.getRotation().y();
+        t.transform.rotation.z = T_init.getRotation().z();
+        t.transform.rotation.w = T_init.getRotation().w();
+        
+        tf_static_broadcaster_->sendTransform(t);
+    }
+
+    nav_msgs::msg::Odometry transform_odometry(const nav_msgs::msg::Odometry::SharedPtr msg, const tf2::Transform& T_imu_base)
+    {
+        // T_global_imu
+        tf2::Transform T_global_imu;
+        tf2::fromMsg(msg->pose.pose, T_global_imu);
+
+        // T_global_base = T_global_imu * T_imu_base
+        tf2::Transform T_global_base = T_global_imu * T_imu_base;
+
         nav_msgs::msg::Odometry out;
         out.header.stamp = msg->header.stamp;
-        out.header.frame_id = "global";  // Tell EKF this is in the global frame
+        out.header.frame_id = "global";
         out.child_frame_id = "base_link";
 
         tf2::Vector3 pos = T_global_base.getOrigin();
@@ -182,23 +151,16 @@ private:
         out.pose.pose.orientation.z = rot.z();
         out.pose.pose.orientation.w = rot.w();
 
-        // Copy and INFLATE covariance from input (if available)
-        // VIO covariances are microscopically small. When fusing two VIOs,
-        // we must inflate them so the EKF can find a smooth tradeoff without diverging.
+        // Copy and inflate covariance (EKF tuning)
         for (int i = 0; i < 36; ++i) {
             out.pose.covariance[i] = msg->pose.covariance[i] * 100.0;
         }
 
-        // Transform twist (velocity) from imu frame to base_link frame
-        // v_base = R_base_imu * v_imu
+        // Transform twist from imu frame to base_link frame
         tf2::Matrix3x3 R_base_imu = T_imu_base.inverse().getBasis();
 
-        tf2::Vector3 v_lin(msg->twist.twist.linear.x,
-                           msg->twist.twist.linear.y,
-                           msg->twist.twist.linear.z);
-        tf2::Vector3 v_ang(msg->twist.twist.angular.x,
-                           msg->twist.twist.angular.y,
-                           msg->twist.twist.angular.z);
+        tf2::Vector3 v_lin(msg->twist.twist.linear.x, msg->twist.twist.linear.y, msg->twist.twist.linear.z);
+        tf2::Vector3 v_ang(msg->twist.twist.angular.x, msg->twist.twist.angular.y, msg->twist.twist.angular.z);
 
         tf2::Vector3 v_lin_base = R_base_imu * v_lin;
         tf2::Vector3 v_ang_base = R_base_imu * v_ang;
@@ -214,31 +176,33 @@ private:
         return out;
     }
 
+    // --- State Variables ---
+    rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_front_sub_;
+    rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_back_sub_;
+    
+    rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_front_pub_;
+    rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_back_pub_;
+
+    std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
+    std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
+    std::shared_ptr<tf2_ros::StaticTransformBroadcaster> tf_static_broadcaster_;
+
     // Static transforms
     tf2::Transform T_imu_front_base_;  
     tf2::Transform T_imu_back_base_;   
-    tf2::Transform T_global_globalned_front_; 
-    tf2::Transform T_global_globalned_back_;  
+    tf2::Transform T_global_global_ned_;
 
     // Zeroing
     bool first_msg_front_ = true;
     bool first_msg_back_ = true;
     tf2::Transform T_init_front_;
     tf2::Transform T_init_back_;
-
-    std::shared_ptr<tf2_ros::StaticTransformBroadcaster> tf_static_broadcaster_;
-
-    // Publishers & Subscribers
-    rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr pub_front_;
-    rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr pub_back_;
-    rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr sub_front_;
-    rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr sub_back_;
 };
 
 int main(int argc, char **argv)
 {
     rclcpp::init(argc, argv);
-    rclcpp::spin(std::make_shared<OdomToBaselink>());
+    rclcpp::spin(std::make_shared<OdomToBaselinkNode>());
     rclcpp::shutdown();
     return 0;
 }

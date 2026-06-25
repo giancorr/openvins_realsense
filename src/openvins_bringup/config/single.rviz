@@ -52,7 +52,7 @@ Visualization Manager:
         cam1_link:
           Value: false
         global:
-          Value: true
+          Value: false
         odom:
           Value: true
         global_ned:

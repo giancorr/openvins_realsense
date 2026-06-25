@@ -11,6 +11,7 @@ def generate_launch_description():
         package='ov_msckf',
         executable='run_subscribe_msckf',
         name='ov_msckf',
+        namespace='back',
         output='screen',
         parameters=[
             {"verbosity": "INFO"},
