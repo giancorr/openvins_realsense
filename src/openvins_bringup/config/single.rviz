@@ -89,7 +89,7 @@ Visualization Manager:
           Value: false
         imu:
           Value: true
-        odom_frame: map
+        odom_frame:
           Value: false
         cam0:
           Value: false
