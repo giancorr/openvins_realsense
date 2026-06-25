@@ -152,38 +152,40 @@ private:
         out.pose.pose.orientation.z = rot.z();
         out.pose.pose.orientation.w = rot.w();
 
-        // Copy and inflate covariance (EKF tuning)
-        for (int i = 0; i < 36; ++i) {
-            out.pose.covariance[i] = msg->pose.covariance[i] * 100.0;
-        }
+        // Pass covariance
+        out.pose.covariance = msg->pose.covariance;
 
-        // Transform twist from imu frame to base_link frame
-        tf2::Matrix3x3 R_base_imu = T_imu_base.inverse().getBasis();
+        // Twist needs to be rotated because it is expressed in body frame (cam_link). 
+        // We want it in the new base_link frame.
+        tf2::Vector3 linear_vel_imu(msg->twist.twist.linear.x, msg->twist.twist.linear.y, msg->twist.twist.linear.z);
+        tf2::Vector3 angular_vel_imu(msg->twist.twist.angular.x, msg->twist.twist.angular.y, msg->twist.twist.angular.z);
 
-        tf2::Vector3 v_lin(msg->twist.twist.linear.x, msg->twist.twist.linear.y, msg->twist.twist.linear.z);
-        tf2::Vector3 v_ang(msg->twist.twist.angular.x, msg->twist.twist.angular.y, msg->twist.twist.angular.z);
+        // Apply rotation from IMU to base_link
+        tf2::Matrix3x3 R_imu_base(T_imu_base.getRotation());
+        tf2::Vector3 linear_vel_base = R_imu_base.inverse() * linear_vel_imu;
+        tf2::Vector3 angular_vel_base = R_imu_base.inverse() * angular_vel_imu;
 
-        tf2::Vector3 v_lin_base = R_base_imu * v_lin;
-        tf2::Vector3 v_ang_base = R_base_imu * v_ang;
+        out.twist.twist.linear.x = linear_vel_base.x();
+        out.twist.twist.linear.y = linear_vel_base.y();
+        out.twist.twist.linear.z = linear_vel_base.z();
+        
+        out.twist.twist.angular.x = angular_vel_base.x();
+        out.twist.twist.angular.y = angular_vel_base.y();
+        out.twist.twist.angular.z = angular_vel_base.z();
 
-        out.twist.twist.linear.x = v_lin_base.x();
-        out.twist.twist.linear.y = v_lin_base.y();
-        out.twist.twist.linear.z = v_lin_base.z();
-        out.twist.twist.angular.x = v_ang_base.x();
-        out.twist.twist.angular.y = v_ang_base.y();
-        out.twist.twist.angular.z = v_ang_base.z();
+        // Pass Twist covariance 
         out.twist.covariance = msg->twist.covariance;
 
         return out;
     }
 
-    // --- State Variables ---
+    // ROS2 constructs
     rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_front_sub_;
     rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_back_sub_;
     
     rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_front_pub_;
     rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_back_pub_;
-
+    
     std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
     std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
     std::shared_ptr<tf2_ros::StaticTransformBroadcaster> tf_static_broadcaster_;

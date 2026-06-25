@@ -53,7 +53,7 @@ Visualization Manager:
           Value: false
         global:
           Value: false
-        odom:
+        map:
           Value: true
         global_ned:
           Value: false
@@ -89,7 +89,7 @@ Visualization Manager:
           Value: false
         imu:
           Value: true
-        odom_frame:
+        odom_frame: map
           Value: false
         cam0:
           Value: false
@@ -328,7 +328,7 @@ Visualization Manager:
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
-    Fixed Frame: odom
+    Fixed Frame: map
     Frame Rate: 60
   Name: root
   Tools:
