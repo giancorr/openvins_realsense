@@ -23,9 +23,9 @@ public:
 
         path_msg_.header.frame_id = "map";
 
-        // ENU-to-NED conversion not needed (global is already Z-down)
+        // ENU-to-NED rotation (rotX 180°), applied internally
         tf2::Quaternion q_ned;
-        q_ned.setRPY(0.0, 0.0, 0.0);
+        q_ned.setRPY(M_PI, 0.0, 0.0);
         T_enu_to_ned_.setRotation(q_ned);
         T_enu_to_ned_.setOrigin(tf2::Vector3(0, 0, 0));
 

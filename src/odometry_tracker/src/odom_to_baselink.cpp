@@ -31,19 +31,19 @@ public:
         tf_static_broadcaster_ = std::make_shared<tf2_ros::StaticTransformBroadcaster>(this);
 
         // --- Static transform: cam0 IMU -> base_link ---
-        tf2::Quaternion q_front(0.5, 0.5, 0.5, -0.5);
+        tf2::Quaternion q_front(-0.5, 0.5, -0.5, -0.5);
         T_imu_front_base_.setRotation(q_front);
         T_imu_front_base_.setOrigin(tf2::Vector3(0.0, -0.15, -0.13));
 
         // --- Static transform: cam1 IMU -> base_link ---
         // Derived from: 15cm behind, 19cm below, yaw 180°, pitch 30° down
-        tf2::Quaternion q_back(-0.35355339, 0.35355339, 0.61237244, 0.61237244);
+        tf2::Quaternion q_back(0.61237244, 0.61237244, -0.35355339, 0.35355339);
         T_imu_back_base_.setRotation(q_back);
         T_imu_back_base_.setOrigin(tf2::Vector3(0.0, -0.089545, -0.224904));
 
-        // --- ENU-to-NED conversion not needed (global is already Z-down) ---
+        // --- ENU-to-NED conversion (rotX 180°), applied internally ---
         tf2::Quaternion q_ned;
-        q_ned.setRPY(0.0, 0.0, 0.0);
+        q_ned.setRPY(M_PI, 0.0, 0.0);
         T_enu_to_ned_.setRotation(q_ned);
         T_enu_to_ned_.setOrigin(tf2::Vector3(0, 0, 0));
 
