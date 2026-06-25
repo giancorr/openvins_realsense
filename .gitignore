@@ -17,3 +17,8 @@ Thumbs.db
 # Temp python scripts
 calc_transforms.py
 fix_cam1_rot.py
+test_tf.py
+test_quats.py
+test_cams.py
+test_trans.py
+fix_quats.py
