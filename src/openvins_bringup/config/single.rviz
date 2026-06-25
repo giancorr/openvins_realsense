@@ -53,6 +53,8 @@ Visualization Manager:
           Value: false
         global:
           Value: true
+        odom:
+          Value: true
         global_ned:
           Value: false
         cam0_accel_frame:
