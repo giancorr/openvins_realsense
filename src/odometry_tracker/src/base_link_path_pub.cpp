@@ -6,6 +6,7 @@
 #include <tf2/LinearMath/Transform.h>
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
+#include <tf2_ros/static_transform_broadcaster.h>
 
 class BaseLinkPathPublisher : public rclcpp::Node
 {
@@ -17,6 +18,9 @@ public:
         tf_buffer_ = std::make_shared<tf2_ros::Buffer>(this->get_clock());
         tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
         path_msg_.header.frame_id = "odom";
+        
+        tf_static_broadcaster_ = std::make_shared<tf2_ros::StaticTransformBroadcaster>(this);
+
         timer_ = this->create_wall_timer(
             std::chrono::milliseconds(50),  // 20 Hz
             std::bind(&BaseLinkPathPublisher::timer_callback, this));
@@ -47,6 +51,20 @@ private:
             q_yaw.setRPY(0.0, 0.0, yaw);
             T_init_.setRotation(q_yaw);
             T_init_.setOrigin(T_global_base.getOrigin());
+
+            geometry_msgs::msg::TransformStamped t;
+            t.header.stamp = transform.header.stamp;
+            t.header.frame_id = "global_ned";
+            t.child_frame_id = "odom";
+            t.transform.translation.x = T_init_.getOrigin().x();
+            t.transform.translation.y = T_init_.getOrigin().y();
+            t.transform.translation.z = T_init_.getOrigin().z();
+            t.transform.rotation.x = q_yaw.x();
+            t.transform.rotation.y = q_yaw.y();
+            t.transform.rotation.z = q_yaw.z();
+            t.transform.rotation.w = q_yaw.w();
+            tf_static_broadcaster_->sendTransform(t);
+
             first_msg_ = false;
         }
 
@@ -77,6 +95,7 @@ private:
     std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
     nav_msgs::msg::Path path_msg_;
     rclcpp::TimerBase::SharedPtr timer_;
+    std::shared_ptr<tf2_ros::StaticTransformBroadcaster> tf_static_broadcaster_;
 
     // Zeroing
     bool first_msg_ = true;
