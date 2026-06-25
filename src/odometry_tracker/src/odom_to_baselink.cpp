@@ -45,10 +45,10 @@ public:
         T_imu_front_base_.setOrigin(tf2::Vector3(0.0, -0.14, -0.12));
 
         // Static transform: cam1 IMU -> base_link
-        // Valori fisici originali per non far divergere il filtro
-        tf2::Quaternion q_back(-0.61237242, 0.61237242, 0.35355341, -0.35355341);
+        // Valori fisici originali calcolati dall'utente per la back_session
+        tf2::Quaternion q_back(-0.3462856, -0.3567783, 0.6153622, -0.6116574);
         T_imu_back_base_.setRotation(q_back);
-        T_imu_back_base_.setOrigin(tf2::Vector3(0.173205, -0.15, 0.10));
+        T_imu_back_base_.setOrigin(tf2::Vector3(-0.010360, 0.252312, -0.206836));
 
         // Static transform: global -> global_ned 
         // Static transform: global -> global_ned 
