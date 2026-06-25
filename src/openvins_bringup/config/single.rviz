@@ -54,7 +54,7 @@ Visualization Manager:
         global:
           Value: true
         global_ned:
-          Value: true
+          Value: false
         cam0_accel_frame:
           Value: false
         cam0_accel_optical_frame:
@@ -86,7 +86,7 @@ Visualization Manager:
         cam1_fisheye2_optical_frame:
           Value: false
         imu:
-          Value: false
+          Value: true
         odom_frame:
           Value: false
         cam0:
@@ -326,7 +326,7 @@ Visualization Manager:
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
-    Fixed Frame: global
+    Fixed Frame: odom
     Frame Rate: 60
   Name: root
   Tools:

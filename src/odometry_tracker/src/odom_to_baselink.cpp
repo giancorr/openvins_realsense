@@ -16,6 +16,8 @@
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2/LinearMath/Transform.h>
 #include <tf2/LinearMath/Matrix3x3.h>
+#include <tf2_ros/static_transform_broadcaster.h>
+#include <geometry_msgs/msg/transform_stamped.hpp>
 
 class OdomToBaselink : public rclcpp::Node
 {
@@ -59,6 +61,8 @@ public:
         T_global_globalned_back_.setRotation(q_global_ned);
         T_global_globalned_back_.setOrigin(tf2::Vector3(0.0, 0.0, 0.0));
 
+        tf_static_broadcaster_ = std::make_shared<tf2_ros::StaticTransformBroadcaster>(this);
+
         // CORREZIONE RIMOSSA: Applichiamo solo la logica pura sui quaternioni locali.
         RCLCPP_INFO(this->get_logger(),
             "odom_to_baselink started: transforming IMU odometries to base_link in global_ned");
@@ -87,6 +91,20 @@ private:
             q_yaw.setRPY(0.0, 0.0, yaw);
             T_init_front_.setRotation(q_yaw);
             T_init_front_.setOrigin(T_global_base.getOrigin());
+            
+            geometry_msgs::msg::TransformStamped t;
+            t.header.stamp = msg->header.stamp;
+            t.header.frame_id = "global_ned";
+            t.child_frame_id = "odom";
+            t.transform.translation.x = T_init_front_.getOrigin().x();
+            t.transform.translation.y = T_init_front_.getOrigin().y();
+            t.transform.translation.z = T_init_front_.getOrigin().z();
+            t.transform.rotation.x = q_yaw.x();
+            t.transform.rotation.y = q_yaw.y();
+            t.transform.rotation.z = q_yaw.z();
+            t.transform.rotation.w = q_yaw.w();
+            tf_static_broadcaster_->sendTransform(t);
+
             first_msg_front_ = false;
         }
 
@@ -118,6 +136,20 @@ private:
             q_yaw.setRPY(0.0, 0.0, yaw);
             T_init_back_.setRotation(q_yaw);
             T_init_back_.setOrigin(T_global_base.getOrigin());
+
+            geometry_msgs::msg::TransformStamped t;
+            t.header.stamp = msg->header.stamp;
+            t.header.frame_id = "global_ned";
+            t.child_frame_id = "odom";
+            t.transform.translation.x = T_init_back_.getOrigin().x();
+            t.transform.translation.y = T_init_back_.getOrigin().y();
+            t.transform.translation.z = T_init_back_.getOrigin().z();
+            t.transform.rotation.x = q_yaw.x();
+            t.transform.rotation.y = q_yaw.y();
+            t.transform.rotation.z = q_yaw.z();
+            t.transform.rotation.w = q_yaw.w();
+            tf_static_broadcaster_->sendTransform(t);
+
             first_msg_back_ = false;
         }
 
@@ -193,6 +225,8 @@ private:
     bool first_msg_back_ = true;
     tf2::Transform T_init_front_;
     tf2::Transform T_init_back_;
+
+    std::shared_ptr<tf2_ros::StaticTransformBroadcaster> tf_static_broadcaster_;
 
     // Publishers & Subscribers
     rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr pub_front_;
