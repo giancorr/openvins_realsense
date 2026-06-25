@@ -16,7 +16,7 @@ find_package(tf2_geometry_msgs REQUIRED)
 # Node 1: base_link_path_pub — publishes Path of base_link from TF
 add_executable(base_link_path_pub src/base_link_path_pub.cpp)
 ament_target_dependencies(base_link_path_pub
-  rclcpp nav_msgs geometry_msgs tf2 tf2_ros)
+  rclcpp nav_msgs geometry_msgs tf2 tf2_ros tf2_geometry_msgs)
 
 # Node 2: odom_to_baselink — transforms IMU odometries to base_link
 add_executable(odom_to_baselink src/odom_to_baselink.cpp)
