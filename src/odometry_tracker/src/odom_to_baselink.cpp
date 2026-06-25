@@ -41,9 +41,9 @@ public:
         T_imu_back_base_.setRotation(q_back);
         T_imu_back_base_.setOrigin(tf2::Vector3(0.0, -0.089545, -0.224904));
 
-        // --- ENU-to-NED conversion (rotX 180°), applied internally ---
+        // --- ENU-to-NED conversion not needed (global is already Z-down) ---
         tf2::Quaternion q_ned;
-        q_ned.setRPY(M_PI, 0.0, 0.0);
+        q_ned.setRPY(0.0, 0.0, 0.0);
         T_enu_to_ned_.setRotation(q_ned);
         T_enu_to_ned_.setOrigin(tf2::Vector3(0, 0, 0));
 
