@@ -1,0 +1,15 @@
+autonomous_test_node:
+  ros__parameters:
+    # Timing parameters (in seconds)
+    command_interval_min: 120    # Minimum time between commands (2 minutes)
+    command_interval_max: 180    # Maximum time between commands (3 minutes)
+    max_wait_time: 60           # Max time to wait if system is not idle (1 minute)
+    
+    # Command probabilities
+    land_probability: 0.0      # 3% chance of sending land command to disable random landing during exploration testing
+    max_consecutive_failures: 3 # Emergency land after this many consecutive failures
+    
+    # Exploration parameters
+    max_goal_distance: 8.0      # Increased maximum radius for exploration step
+    goal_distance_ratio: 0.5    # Ratio of max distance to spawn goal (0.5 = halfway)
+    min_forward_space: 1.5      # Minimum forward space required, otherwise return to start
