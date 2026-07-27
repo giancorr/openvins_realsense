@@ -68,14 +68,14 @@ def generate_launch_description():
             parameters=[config_file, {'use_sim_time': use_sim_time, 'enable_tactile_odometry': False}]
         ),
         
-        # Lateral spawner
-        Node(
-            package='vio_recovery',
-            executable='swipe_spawner',
-            name='swipe_spawner',
-            output='screen',
-            parameters=[config_file]
-        ),
+        # Lateral spawner (Disattivato per volo hardware)
+        # Node(
+        #     package='vio_recovery',
+        #     executable='swipe_spawner',
+        #     name='swipe_spawner',
+        #     output='screen',
+        #     parameters=[config_file]
+        # ),
 
         # Down spawner / Box dropper
         Node(
