@@ -13,6 +13,13 @@ def generate_launch_description():
     )
     use_sim_time = LaunchConfiguration('use_sim_time')
     
+    odom_topic_arg = DeclareLaunchArgument(
+        'odom_topic',
+        default_value='/ov_msckf/odomimu',
+        description='Odometry topic to filter and send to PX4'
+    )
+    odom_topic = LaunchConfiguration('odom_topic')
+    
     config_file = '/root/ros2_ws/src/pkg/vio_recovery/config/params.yaml'
 
     pkg_path = os.path.expanduser('~/ros2_ws/src/pkg/vio_recovery')
@@ -23,6 +30,7 @@ def generate_launch_description():
 
     return LaunchDescription([
         use_sim_time_arg,
+        odom_topic_arg,
         SetEnvironmentVariable(
             name='GZ_SIM_RESOURCE_PATH',
             value='/root/ros2_ws/src/pkg/vio_recovery/models'
@@ -65,7 +73,8 @@ def generate_launch_description():
             executable='flight_odometry_filter',
             name='flight_odometry_filter_node',
             output='screen',
-            parameters=[config_file, {'use_sim_time': use_sim_time, 'enable_tactile_odometry': False}]
+            parameters=[config_file, {'use_sim_time': use_sim_time, 'enable_tactile_odometry': False}],
+            remappings=[('/ov_msckf/odomimu', odom_topic)]
         ),
         
         # Lateral spawner (Disattivato per volo hardware)
