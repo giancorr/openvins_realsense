@@ -1,9 +1,18 @@
 import os
 from launch import LaunchDescription
 from launch_ros.actions import Node
+from launch.substitutions import LaunchConfiguration
+from launch.actions import DeclareLaunchArgument
 from launch.actions import SetEnvironmentVariable
 
 def generate_launch_description():
+    use_sim_time_arg = DeclareLaunchArgument(
+        'use_sim_time',
+        default_value='false',
+        description='Use simulation time'
+    )
+    use_sim_time = LaunchConfiguration('use_sim_time')
+    
     config_file = '/root/ros2_ws/src/pkg/vio_recovery/config/params.yaml'
 
     pkg_path = os.path.expanduser('~/ros2_ws/src/pkg/vio_recovery')
@@ -13,6 +22,7 @@ def generate_launch_description():
         os.makedirs(log_path)
 
     return LaunchDescription([
+        use_sim_time_arg,
         SetEnvironmentVariable(
             name='GZ_SIM_RESOURCE_PATH',
             value='/root/ros2_ws/src/pkg/vio_recovery/models'
@@ -55,7 +65,7 @@ def generate_launch_description():
             executable='flight_odometry_filter',
             name='flight_odometry_filter_node',
             output='screen',
-            parameters=[config_file, {'use_sim_time': True, 'enable_tactile_odometry': False}]
+            parameters=[config_file, {'use_sim_time': use_sim_time, 'enable_tactile_odometry': False}]
         ),
         
         # Lateral spawner
@@ -67,13 +77,13 @@ def generate_launch_description():
             parameters=[config_file]
         ),
 
-        # Down spawner
+        # Down spawner / Box dropper
         Node(
             package='vio_recovery',
-            executable='drop_spawner',
-            name='drop_spawner',
+            executable='box_dropper_node',
+            name='box_dropper_node',
             output='screen',
-            parameters=[config_file]
+            parameters=[config_file, {'use_sim_time': use_sim_time}]
         ),
 
         # Wrench estimator

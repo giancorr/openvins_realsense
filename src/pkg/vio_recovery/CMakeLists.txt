@@ -54,6 +54,9 @@ ament_target_dependencies(swipe_spawner rclcpp std_msgs nav_msgs geometry_msgs p
 add_executable(drop_spawner src/drop_spawner.cpp)
 ament_target_dependencies(drop_spawner rclcpp std_msgs nav_msgs geometry_msgs px4_msgs)
 
+add_executable(box_dropper_node src/box_dropper_node.cpp)
+ament_target_dependencies(box_dropper_node rclcpp std_msgs px4_msgs)
+
 add_executable(feature_counter_node src/feature_counter_node.cpp)
 ament_target_dependencies(feature_counter_node rclcpp sensor_msgs std_msgs cv_bridge OpenCV)
 target_link_libraries(feature_counter_node ${OpenCV_LIBRARIES})
@@ -87,6 +90,7 @@ rosidl_get_typesupport_target(cpp_typesupport_target ${PROJECT_NAME} "rosidl_typ
 target_link_libraries(vio_recovery_fsm ${cpp_typesupport_target})
 target_link_libraries(swipe_spawner ${cpp_typesupport_target})
 target_link_libraries(drop_spawner ${cpp_typesupport_target})
+target_link_libraries(box_dropper_node ${cpp_typesupport_target})
 target_link_libraries(feature_counter_node ${cpp_typesupport_target})
 target_link_libraries(spray_heuristic_node ${cpp_typesupport_target})
 
@@ -98,6 +102,7 @@ install(TARGETS
 
   swipe_spawner
   drop_spawner
+  box_dropper_node
   feature_counter_node
   flight_data_logger
   wrench_estimator_node

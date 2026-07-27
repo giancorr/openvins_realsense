@@ -1,5 +1,5 @@
 #include <rclcpp/rclcpp.hpp>
-#include <sensor_msgs/msg/imu.hpp>
+#include <px4_msgs/msg/sensor_combined.hpp>
 #include <geometry_msgs/msg/wrench_stamped.hpp>
 #include <px4_msgs/msg/vehicle_thrust_setpoint.hpp>
 #include <px4_msgs/msg/vehicle_torque_setpoint.hpp>
@@ -52,8 +52,8 @@ public:
             "/fmu/out/vehicle_torque_setpoint", qos,
             std::bind(&WrenchEstimatorNode::torque_callback, this, _1));
 
-        imu_sub_ = this->create_subscription<sensor_msgs::msg::Imu>(
-            "/world/corridor/model/baby_k_0/link/base_link/sensor/imu_sensor/imu", qos,
+        imu_sub_ = this->create_subscription<px4_msgs::msg::SensorCombined>(
+            "/fmu/out/sensor_combined", qos,
             std::bind(&WrenchEstimatorNode::imu_callback, this, _1));
 
     }
@@ -88,7 +88,7 @@ private:
     rclcpp::Publisher<geometry_msgs::msg::WrenchStamped>::SharedPtr wrench_pub_;
     rclcpp::Subscription<px4_msgs::msg::VehicleThrustSetpoint>::SharedPtr thrust_sub_;
     rclcpp::Subscription<px4_msgs::msg::VehicleTorqueSetpoint>::SharedPtr torque_sub_;
-    rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr imu_sub_;
+    rclcpp::Subscription<px4_msgs::msg::SensorCombined>::SharedPtr imu_sub_;
 
     void thrust_callback(const px4_msgs::msg::VehicleThrustSetpoint::SharedPtr msg)
     {
@@ -104,18 +104,18 @@ private:
         current_torque_ = R_frd_to_flu_ * m_frd * max_torque_nm_;
     }
 
-    void imu_callback(const sensor_msgs::msg::Imu::SharedPtr msg)
+    void imu_callback(const px4_msgs::msg::SensorCombined::SharedPtr msg)
     {
-        rclcpp::Time current_time = msg->header.stamp;
+        rclcpp::Time current_time = this->now();
 
         // NaN check
-        if (std::isnan(msg->linear_acceleration.x) || std::isnan(msg->linear_acceleration.y) || std::isnan(msg->linear_acceleration.z) ||
-            std::isnan(msg->angular_velocity.x)    || std::isnan(msg->angular_velocity.y)    || std::isnan(msg->angular_velocity.z)) {
+        if (std::isnan(msg->accelerometer_m_s2[0]) || std::isnan(msg->accelerometer_m_s2[1]) || std::isnan(msg->accelerometer_m_s2[2]) ||
+            std::isnan(msg->gyro_rad[0])           || std::isnan(msg->gyro_rad[1])           || std::isnan(msg->gyro_rad[2])) {
             return;
         }
 
-        Eigen::Vector3d a(msg->linear_acceleration.x, msg->linear_acceleration.y, msg->linear_acceleration.z);
-        Eigen::Vector3d omega(msg->angular_velocity.x, msg->angular_velocity.y, msg->angular_velocity.z);
+        Eigen::Vector3d a(msg->accelerometer_m_s2[0], msg->accelerometer_m_s2[1], msg->accelerometer_m_s2[2]);
+        Eigen::Vector3d omega(msg->gyro_rad[0], msg->gyro_rad[1], msg->gyro_rad[2]);
 
         // Discard physically impossible readings
         if (a.norm() > 500.0 || omega.norm() > 100.0) {
