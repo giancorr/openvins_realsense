@@ -66,15 +66,15 @@ add_executable(debug_vect_advertiser src/examples/advertisers/debug_vect_adverti
 ament_target_dependencies(debug_vect_advertiser rclcpp px4_msgs)
 install(TARGETS debug_vect_advertiser DESTINATION lib/${PROJECT_NAME})
 
-# examples/offboard/offboard_control
-add_executable(offboard_control src/examples/offboard/offboard_control.cpp src/examples/offboard/Trajectory.cpp src/examples/offboard/planner_spline.cpp)
-ament_target_dependencies(offboard_control rclcpp
-	px4_msgs
-	geometry_msgs
-	tf2
-	Eigen3
-	Boost)
-install(TARGETS offboard_control DESTINATION lib/${PROJECT_NAME})
+# # examples/offboard/offboard_control
+# add_executable(offboard_control src/examples/offboard/offboard_control.cpp src/examples/offboard/Trajectory.cpp src/examples/offboard/planner_spline.cpp)
+# ament_target_dependencies(offboard_control rclcpp
+# 	px4_msgs
+# 	geometry_msgs
+# 	tf2
+# 	Eigen3
+# 	Boost)
+# install(TARGETS offboard_control DESTINATION lib/${PROJECT_NAME})
 add_executable(offboard_control_px4 src/examples/offboard/offboard_control_px4.cpp src/examples/offboard/Trajectory.cpp src/examples/offboard/planner_spline.cpp)
 ament_target_dependencies(offboard_control_px4 rclcpp
 	px4_msgs
