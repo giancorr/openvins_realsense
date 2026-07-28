@@ -110,7 +110,8 @@ def generate_launch_description():
             executable='spray_heuristic_node',
             name='spray_heuristic_node',
             output='screen',
-            parameters=[config_file]
+            parameters=[config_file],
+            remappings=[('/ov_msckf/odomimu', odom_topic)]
         ),
 
         # Feature counter
@@ -128,6 +129,7 @@ def generate_launch_description():
             executable='flight_data_logger',
             name='flight_data_logger',
             output='screen',
-            cwd=log_path
+            cwd=log_path,
+            remappings=[('/ov_msckf/odomimu', odom_topic)]
         )
     ])

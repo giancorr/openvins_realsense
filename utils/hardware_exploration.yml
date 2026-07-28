@@ -42,10 +42,6 @@ windows:
         - sleep 14
         - cd ~/ros2_ws && source install/setup.bash
         - ros2 run odometry_tracker base_link_path_pub --ros-args -p use_sim_time:=false
-    - shell_command:
-        - sleep 15
-        - cd ~/ros2_ws && source install/setup.bash
-        - ros2 launch babyk_drone_manager px4_tf_pub_simulation.launch.py use_sim_time:=false relay_odometry:=false /fmu/in/vehicle_visual_odometry:=/dummy_visual_odometry
 
 - window_name: path_planning
   layout: tiled
@@ -69,7 +65,7 @@ windows:
     - shell_command:
         - sleep 24
         - cd ~/ros2_ws && source install/setup.bash
-        - ros2 launch vio_mapping mapper.launch.py use_sim_time:=false virtual_range:=8.0
+        - ros2 launch vio_mapping mapper.launch.py use_sim_time:=false virtual_range:=8.0 odom_topic:=/odometry/filtered
     - shell_command:
         - sleep 25
         - cd ~/ros2_ws && source install/setup.bash
