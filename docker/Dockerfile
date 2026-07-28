@@ -61,6 +61,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ros-humble-plotjuggler-ros \
     && rm -rf /var/lib/apt/lists/*
 
+# 8.5 Clone and build px4_msgs at the end to preserve build cache
+WORKDIR /root/ros2_ws/src
+RUN git clone https://github.com/PX4/px4_msgs.git
+WORKDIR /root/ros2_ws
+RUN /bin/bash -c "source /opt/ros/humble/setup.bash && colcon build --packages-select px4_msgs"
+
 # 9. Setup bashrc and entrypoint
 RUN echo "source /opt/ros/humble/setup.bash" >> ~/.bashrc && \
     echo "source /root/ros2_ws/install/setup.bash" >> ~/.bashrc
