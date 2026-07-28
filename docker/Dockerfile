@@ -59,9 +59,21 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     tmuxp \
     ros-humble-robot-localization \
     ros-humble-plotjuggler-ros \
+    ros-humble-octomap \
+    ros-humble-octomap-msgs \
     && rm -rf /var/lib/apt/lists/*
 
-# 8.5 Clone and build px4_msgs at the end to preserve build cache
+# 8.5 Install Micro-XRCE-DDS-Agent
+WORKDIR /root
+RUN git clone https://github.com/eProsima/Micro-XRCE-DDS-Agent.git && \
+    cd Micro-XRCE-DDS-Agent && \
+    mkdir build && cd build && \
+    cmake .. && \
+    make -j$(nproc) && \
+    make install && \
+    ldconfig /usr/local/lib/
+
+# 8.6 Clone and build px4_msgs
 WORKDIR /root/ros2_ws/src
 RUN git clone https://github.com/PX4/px4_msgs.git
 WORKDIR /root/ros2_ws
