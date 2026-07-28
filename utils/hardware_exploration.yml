@@ -1,7 +1,7 @@
 session_name: hardware_exploration
 socket_name: drone_pathplanner
 environment:
-  ROS_DOMAIN_ID: "56"
+  ROS_DOMAIN_ID: "23"
 pre_window:
 windows:
 - window_name: micro_ros
@@ -9,7 +9,7 @@ windows:
   panes:
     - shell_command:
         - sleep 2
-        - MicroXRCEAgent udp4 -p 8888
+        - MicroXRCEAgent serial --dev /dev/ttyUSB0 -b 921600
 
 - window_name: drivers
   layout: tiled
