@@ -17,7 +17,7 @@ windows:
     - shell_command:
         - sleep 5
         - cd ~/ros2_ws && source install/setup.bash
-        - ros2 launch realsense2_camera rs_launch.py camera_name:=cam0 serial_no:="'905312111404'" enable_fisheye1:=true enable_fisheye2:=true enable_pose:=false enable_gyro:=true enable_accel:=true unite_imu_method:="2" publish_tf:=false tf_publish_rate:=0.0
+        - ros2 launch realsense2_camera rs_launch.py camera_name:=cam0 serial_no:="'146322110182'" enable_fisheye1:=true enable_fisheye2:=true enable_pose:=false enable_gyro:=true enable_accel:=true unite_imu_method:="2" publish_tf:=false tf_publish_rate:=0.0
     - shell_command:
         - sleep 5
         - cd ~/ros2_ws && source install/setup.bash
