@@ -63,8 +63,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ros-humble-octomap-msgs \
     ros-humble-pcl-ros \
     ros-humble-pcl-conversions \
-    ros-humble-ompl \
-    ros-humble-fcl \
+    libompl-dev \
+    libfcl-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # 8.5 Install Micro-XRCE-DDS-Agent
