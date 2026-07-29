@@ -36,11 +36,11 @@ windows:
     panes:
       # --- [Pane 1] Front Camera Driver (cam0) ---
       - shell_command:
-          - ros2 launch realsense2_camera rs_launch.py camera_name:=cam0 serial_no:="'146322110182'" enable_fisheye1:=true enable_fisheye2:=true enable_pose:=false enable_gyro:=true enable_accel:=true unite_imu_method:="2" publish_tf:=false tf_publish_rate:=0.0
+          - ros2 launch realsense2_camera rs_launch.py camera_name:=cam0 serial_no:="'146322110182'" enable_fisheye1:=true enable_fisheye2:=true enable_pose:=false enable_gyro:=true enable_accel:=true unite_imu_method:="2" publish_tf:=false tf_publish_rate:=0.0 fisheye_fps:=30
 
       # --- [Pane 2] Back Camera Driver (cam1) ---
       - shell_command:
-          - ros2 launch realsense2_camera rs_launch.py camera_name:=cam1 serial_no:="'146322110430'" enable_fisheye1:=true enable_fisheye2:=true enable_pose:=false enable_gyro:=true enable_accel:=true unite_imu_method:="2" publish_tf:=false tf_publish_rate:=0.0
+          - ros2 launch realsense2_camera rs_launch.py camera_name:=cam1 serial_no:="'146322110430'" enable_fisheye1:=true enable_fisheye2:=true enable_pose:=false enable_gyro:=true enable_accel:=true unite_imu_method:="2" publish_tf:=false tf_publish_rate:=0.0 fisheye_fps:=30
 
       # --- [Pane 3] Static TF Tree ---
       - shell_command:
