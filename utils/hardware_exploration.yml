@@ -25,7 +25,7 @@ windows:
     - shell_command:
         - sleep 6
         - cd ~/ros2_ws && source install/setup.bash
-        - ros2 run tf2_ros static_transform_publisher 0 -0.15 -0.13 0.5 0.5 0.5 -0.5 imu base_link --ros-args -p use_sim_time:=false & ros2 run tf2_ros static_transform_publisher 0.13 0 -0.16 0.5 0.5 0.5 0.5 base_link cam0_link --ros-args -p use_sim_time:=false & ros2 run tf2_ros static_transform_publisher -0.16 0 -0.19 0.61237244 0.61237244 -0.35355339 0.35355339 base_link cam1_link --ros-args -p use_sim_time:=false
+        - ros2 run tf2_ros static_transform_publisher 0 -0.15 -0.13 0.5 0.5 0.5 -0.5 imu base_link --ros-args -p use_sim_time:=false & ros2 run tf2_ros static_transform_publisher 0.13 0 0.16 0.5 0.5 0.5 0.5 base_link cam0_link --ros-args -p use_sim_time:=false & ros2 run tf2_ros static_transform_publisher -0.16 0 0.19 0.61237244 0.61237244 -0.35355339 0.35355339 base_link cam1_link --ros-args -p use_sim_time:=false
 
 - window_name: algorithms
   layout: tiled
