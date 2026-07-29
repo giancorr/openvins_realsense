@@ -12,9 +12,9 @@
     print_diagnostics: true
 
     # Frame configuration
-    odom_frame: global
+    odom_frame: map
     base_link_frame: base_link
-    world_frame: global
+    world_frame: map
     
     # Publish the odom -> base_link transform
     publish_tf: true

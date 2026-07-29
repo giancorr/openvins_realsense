@@ -12,7 +12,6 @@ class OdomToBaselinkNode : public rclcpp::Node
 public:
     OdomToBaselinkNode() : Node("odom_to_baselink_node")
     {
-
         // Publishers & Subscribers
         odom_front_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
             "/front/odomimu", 10,
@@ -52,28 +51,26 @@ public:
 private:
     void odom_front_callback(const nav_msgs::msg::Odometry::SharedPtr msg)
     {
-        // Process Odometry
-        auto out_msg = transform_odometry(msg, T_imu_front_base_);
-        odom_front_pub_->publish(out_msg);
-
-        // Zeroing mechanism on the first message
         if (first_msg_front_) {
-            initialize_odom_frame("front", out_msg);
+            auto global_out = transform_odometry_global(msg, T_imu_front_base_);
+            initialize_odom_frame("front", global_out);
             first_msg_front_ = false;
         }
+
+        auto out_msg = transform_odometry_map(msg, T_imu_front_base_, T_init_front_);
+        odom_front_pub_->publish(out_msg);
     }
 
     void odom_back_callback(const nav_msgs::msg::Odometry::SharedPtr msg)
     {
-        // Process Odometry
-        auto out_msg = transform_odometry(msg, T_imu_back_base_);
-        odom_back_pub_->publish(out_msg);
-
-        // Zeroing mechanism on the first message
         if (first_msg_back_) {
-            initialize_odom_frame("back", out_msg);
+            auto global_out = transform_odometry_global(msg, T_imu_back_base_);
+            initialize_odom_frame("back", global_out);
             first_msg_back_ = false;
         }
+
+        auto out_msg = transform_odometry_map(msg, T_imu_back_base_, T_init_back_);
+        odom_back_pub_->publish(out_msg);
     }
 
     void initialize_odom_frame(const std::string& session_type, const nav_msgs::msg::Odometry& out_msg)
@@ -126,7 +123,7 @@ private:
         tf_static_broadcaster_->sendTransform(t);
     }
 
-    nav_msgs::msg::Odometry transform_odometry(const nav_msgs::msg::Odometry::SharedPtr msg, const tf2::Transform& T_imu_base)
+    nav_msgs::msg::Odometry transform_odometry_global(const nav_msgs::msg::Odometry::SharedPtr msg, const tf2::Transform& T_imu_base)
     {
         // T_global_imu
         tf2::Transform T_global_imu;
@@ -142,6 +139,36 @@ private:
 
         tf2::Vector3 pos = T_global_base.getOrigin();
         tf2::Quaternion rot = T_global_base.getRotation();
+
+        out.pose.pose.position.x = pos.x();
+        out.pose.pose.position.y = pos.y();
+        out.pose.pose.position.z = pos.z();
+        out.pose.pose.orientation.x = rot.x();
+        out.pose.pose.orientation.y = rot.y();
+        out.pose.pose.orientation.z = rot.z();
+        out.pose.pose.orientation.w = rot.w();
+
+        return out;
+    }
+
+    nav_msgs::msg::Odometry transform_odometry_map(const nav_msgs::msg::Odometry::SharedPtr msg, const tf2::Transform& T_imu_base, const tf2::Transform& T_init_ned)
+    {
+        // Get the global base_link pose
+        tf2::Transform T_global_imu;
+        tf2::fromMsg(msg->pose.pose, T_global_imu);
+        tf2::Transform T_global_base = T_global_imu * T_imu_base;
+
+        // Apply zeroing
+        tf2::Transform T_ned_base = T_enu_to_ned_.inverse() * T_global_base;
+        tf2::Transform T_map_base = T_init_ned.inverse() * T_ned_base;
+
+        nav_msgs::msg::Odometry out;
+        out.header.stamp = msg->header.stamp;
+        out.header.frame_id = "map";
+        out.child_frame_id = "base_link";
+
+        tf2::Vector3 pos = T_map_base.getOrigin();
+        tf2::Quaternion rot = T_map_base.getRotation();
 
         out.pose.pose.position.x = pos.x();
         out.pose.pose.position.y = pos.y();
