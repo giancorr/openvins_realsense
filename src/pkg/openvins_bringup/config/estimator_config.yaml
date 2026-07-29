@@ -3,7 +3,7 @@ verbosity: "INFO"
 use_fej: true
 integration: "rk4"
 use_stereo: false
-max_cameras: 2
+max_cameras: 1
 calib_cam_extrinsics: true
 calib_cam_intrinsics: true
 calib_cam_timeoffset: true
@@ -72,4 +72,4 @@ use_mask: true
 mask0: "mask_t265_cam0.png"
 mask1: "mask_t265_cam1.png"
 relative_config_imu: "kalibr_imu_chain.yaml"
-relative_config_imucam: "kalibr_imucam_chain.yaml"
+relative_config_imucam: "kalibr_imucam_chain_front.yaml"
