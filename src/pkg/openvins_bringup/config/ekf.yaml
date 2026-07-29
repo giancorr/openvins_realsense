@@ -26,7 +26,7 @@
                    false, false, false,  # vx, vy, vz
                    false,  false,  false,   # vroll, vpitch, vyaw
                    false, false, false]  # ax, ay, az
-    odom0_differential: false
+    odom0_differential: true
     odom0_relative: false
     odom0_queue_size: 10
 
@@ -37,7 +37,7 @@
                    false, false, false,  # vx, vy, vz
                    false, false, false,
                    false, false, false]
-    odom1_differential: false
+    odom1_differential: true
     odom1_relative: false
     odom1_queue_size: 10
 
