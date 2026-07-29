@@ -24,7 +24,7 @@ windows:
       # --- [Pane 3] Odometry & Path Publisher (C++) ---
       - shell_command:
           - sleep 6
-          - ros2 run odometry_tracker base_link_path_pub
+          - ros2 run odometry_tracker odom_to_baselink & ros2 run odometry_tracker base_link_path_pub
 
       # --- [Pane 4] Debug Terminal ---
       - shell_command:

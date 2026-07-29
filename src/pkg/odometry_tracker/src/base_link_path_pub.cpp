@@ -31,7 +31,15 @@ private:
         geometry_msgs::msg::TransformStamped transform;
         try {
             transform = tf_buffer_->lookupTransform("map", "base_link", tf2::TimePointZero);
-        } catch (const tf2::TransformException &) {
+            if (!found_tf_) {
+                RCLCPP_INFO(this->get_logger(), "FOUND map -> base_link TF! Starting to publish.");
+                found_tf_ = true;
+            }
+        } catch (const tf2::TransformException & ex) {
+            if (!error_printed_) {
+                RCLCPP_WARN(this->get_logger(), "Could not find map -> base_link TF: %s", ex.what());
+                error_printed_ = true;
+            }
             return;
         }
 
@@ -59,6 +67,8 @@ private:
     
     nav_msgs::msg::Path path_msg_;
     rclcpp::TimerBase::SharedPtr timer_;
+    bool error_printed_ = false;
+    bool found_tf_ = false;
 };
 
 int main(int argc, char **argv)
