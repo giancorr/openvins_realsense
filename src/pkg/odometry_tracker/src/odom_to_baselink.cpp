@@ -39,10 +39,10 @@ public:
         T_imu_back_base_.setRotation(q_back);
         T_imu_back_base_.setOrigin(tf2::Vector3(0.04, -0.07588457, -0.22856406));
 
-        // --- ENU-to-NED conversion (rotX 180°), applied internally ---
-        tf2::Quaternion q_ned;
-        q_ned.setRPY(M_PI, 0.0, 0.0);
-        T_enu_to_ned_.setRotation(q_ned);
+        // --- Conversion to User FRD frame (X=Forward, Y=Right, Z=Down) ---
+        // Quaternion (x, y, z, w) for R_enu_to_user (Roll=180°, Pitch=0°, Yaw=90°)
+        tf2::Quaternion q_user(0.70710678, 0.70710678, 0.0, 0.0);
+        T_enu_to_ned_.setRotation(q_user);
         T_enu_to_ned_.setOrigin(tf2::Vector3(0, 0, 0));
 
         RCLCPP_INFO(this->get_logger(), "OdomToBaselinkNode started. Listening to OpenVINS odometry...");
@@ -75,13 +75,12 @@ private:
 
     void initialize_odom_frame(const std::string& session_type, const nav_msgs::msg::Odometry& out_msg)
     {
-        // Convert odometry (global -> base_link) to NED, then define the 'map' frame
-        tf2::Transform T_global_base;
-        tf2::fromMsg(out_msg.pose.pose, T_global_base);
+        // Define initial origin and yaw in User FRD frame
+        tf2::Transform T_global_base_enu;
+        tf2::fromMsg(out_msg.pose.pose, T_global_base_enu);
+        tf2::Transform T_user_base = T_enu_to_ned_ * T_global_base_enu;
 
-        tf2::Transform T_ned_base = T_enu_to_ned_.inverse() * T_global_base;
-
-        tf2::Matrix3x3 m(T_ned_base.getRotation());
+        tf2::Matrix3x3 m(T_user_base.getRotation());
         double roll, pitch, yaw;
         m.getRPY(roll, pitch, yaw);
 
@@ -90,35 +89,38 @@ private:
 
         if (session_type == "front") {
             T_init_front_.setRotation(q_yaw);
-            T_init_front_.setOrigin(T_ned_base.getOrigin());
-            publish_static_map(T_init_front_, out_msg.header.stamp);
+            T_init_front_.setOrigin(T_user_base.getOrigin());
+            if (!static_map_published_) {
+                publish_static_map(T_init_front_, out_msg.header.stamp);
+                static_map_published_ = true;
+            }
             RCLCPP_INFO(this->get_logger(), "Zeroing complete for FRONT session.");
         } else {
             T_init_back_.setRotation(q_yaw);
-            T_init_back_.setOrigin(T_ned_base.getOrigin());
-            publish_static_map(T_init_back_, out_msg.header.stamp);
+            T_init_back_.setOrigin(T_user_base.getOrigin());
+            if (!static_map_published_) {
+                publish_static_map(T_init_back_, out_msg.header.stamp);
+                static_map_published_ = true;
+            }
             RCLCPP_INFO(this->get_logger(), "Zeroing complete for BACK session.");
         }
     }
 
-    void publish_static_map(const tf2::Transform& T_init_ned, const builtin_interfaces::msg::Time& stamp)
+    void publish_static_map(const tf2::Transform& T_init, const builtin_interfaces::msg::Time& stamp)
     {
-        // Compose: T_global_map = T_enu_to_ned * T_init_ned (bake NED rotation into map frame)
-        tf2::Transform T_global_map = T_enu_to_ned_ * T_init_ned;
-
         geometry_msgs::msg::TransformStamped t;
         t.header.stamp = stamp;
         t.header.frame_id = "global";
         t.child_frame_id = "map";
         
-        t.transform.translation.x = T_global_map.getOrigin().x();
-        t.transform.translation.y = T_global_map.getOrigin().y();
-        t.transform.translation.z = T_global_map.getOrigin().z();
+        t.transform.translation.x = T_init.getOrigin().x();
+        t.transform.translation.y = T_init.getOrigin().y();
+        t.transform.translation.z = T_init.getOrigin().z();
         
-        t.transform.rotation.x = T_global_map.getRotation().x();
-        t.transform.rotation.y = T_global_map.getRotation().y();
-        t.transform.rotation.z = T_global_map.getRotation().z();
-        t.transform.rotation.w = T_global_map.getRotation().w();
+        t.transform.rotation.x = T_init.getRotation().x();
+        t.transform.rotation.y = T_init.getRotation().y();
+        t.transform.rotation.z = T_init.getRotation().z();
+        t.transform.rotation.w = T_init.getRotation().w();
         
         tf_static_broadcaster_->sendTransform(t);
     }
@@ -151,16 +153,16 @@ private:
         return out;
     }
 
-    nav_msgs::msg::Odometry transform_odometry_map(const nav_msgs::msg::Odometry::SharedPtr msg, const tf2::Transform& T_imu_base, const tf2::Transform& T_init_ned)
+    nav_msgs::msg::Odometry transform_odometry_map(const nav_msgs::msg::Odometry::SharedPtr msg, const tf2::Transform& T_imu_base, const tf2::Transform& T_init)
     {
-        // Get the global base_link pose
+        // Get the global base_link pose in ENU
         tf2::Transform T_global_imu;
         tf2::fromMsg(msg->pose.pose, T_global_imu);
-        tf2::Transform T_global_base = T_global_imu * T_imu_base;
+        tf2::Transform T_global_base_enu = T_global_imu * T_imu_base;
 
-        // Apply zeroing
-        tf2::Transform T_ned_base = T_enu_to_ned_.inverse() * T_global_base;
-        tf2::Transform T_map_base = T_init_ned.inverse() * T_ned_base;
+        // Convert to User FRD frame
+        tf2::Transform T_user_base = T_enu_to_ned_ * T_global_base_enu;
+        tf2::Transform T_map_base = T_init.inverse() * T_user_base;
 
         nav_msgs::msg::Odometry out;
         out.header.stamp = msg->header.stamp;
@@ -224,6 +226,7 @@ private:
     // Zeroing
     bool first_msg_front_ = true;
     bool first_msg_back_ = true;
+    bool static_map_published_ = false;
     tf2::Transform T_init_front_;
     tf2::Transform T_init_back_;
 };

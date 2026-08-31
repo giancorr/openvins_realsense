@@ -33,7 +33,7 @@
     # --- Back odometry (cam1 + cam1 IMU) ---
     odom1: /back/base_link_odom
     odom1_config: [true,  true,  true,   # x, y, z
-                   false, false, false,  # roll, pitch, yaw
+                   true,  true,  true,   # roll, pitch, yaw
                    false, false, false,  # vx, vy, vz
                    false, false, false,
                    false, false, false]

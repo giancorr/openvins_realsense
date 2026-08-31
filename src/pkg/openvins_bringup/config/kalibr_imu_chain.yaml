@@ -10,10 +10,10 @@ imu0:
   # Inflated values (to account for unmodelled effects)
   #  - white noise multiplied by 5
   #  - bias random walk multiplied by 10
-  accelerometer_noise_density: 0.00732082098
-  accelerometer_random_walk: 0.0006696534319519138
-  gyroscope_noise_density: 0.00054166825
-  gyroscope_random_walk: 1.1687657234840692e-05
+  accelerometer_noise_density: 0.0366041049   # Inflated x5 for drone vibrations
+  accelerometer_random_walk: 0.00334826715    # Inflated x5 for drone vibrations
+  gyroscope_noise_density: 0.00270834125      # Inflated x5 for drone vibrations
+  gyroscope_random_walk: 0.00005843828        # Inflated x5 for drone vibrations
   rostopic: /t265/imu
   time_offset: 0.0
   update_rate: 200
