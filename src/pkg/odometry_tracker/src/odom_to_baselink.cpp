@@ -32,12 +32,12 @@ public:
         // --- Static transform: cam0 IMU -> base_link ---
         tf2::Quaternion q_front(0.5, -0.5, 0.5, 0.5);
         T_imu_front_base_.setRotation(q_front);
-        T_imu_front_base_.setOrigin(tf2::Vector3(0.0, 0.16, -0.13));
+        T_imu_front_base_.setOrigin(tf2::Vector3(0.04, -0.16, -0.13));
 
         // --- Static transform: cam1 IMU -> base_link ---
-        tf2::Quaternion q_back(-0.35355339, -0.35355339, 0.61237244, -0.61237244);
+        tf2::Quaternion q_back(0.61237244, 0.61237244, -0.35355339, 0.35355339);
         T_imu_back_base_.setRotation(q_back);
-        T_imu_back_base_.setOrigin(tf2::Vector3(0.0, 0.084545, -0.23356));
+        T_imu_back_base_.setOrigin(tf2::Vector3(0.04, -0.07588457, -0.22856406));
 
         // --- ENU-to-NED conversion (rotX 180°), applied internally ---
         tf2::Quaternion q_ned;

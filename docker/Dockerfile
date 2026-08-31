@@ -44,7 +44,7 @@ RUN cp ../config/99-realsense-libusb.rules /etc/udev/rules.d/ || true
 # 5. Resolve ROS dependencies
 WORKDIR /root/ros2_ws
 RUN rosdep init || true
-RUN rosdep update
+RUN rosdep update || rosdep update || rosdep update || true
 RUN apt-get update && rosdep install -i --from-path src --rosdistro humble -y --skip-keys "librealsense2 catkin"
 
 # 6. Prevent colcon from rebuilding the SDK redundantly
