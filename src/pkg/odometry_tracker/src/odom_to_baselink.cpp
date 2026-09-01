@@ -38,9 +38,9 @@ public:
 
         // --- Static transform: cam1 IMU -> base_link ---
         // cam1 at (-0.15, +0.0, +0.18) in base_link NED; 180 deg yaw + 30 deg pitch down
-        tf2::Quaternion q_back(0.61237244, 0.61237244, -0.35355339, 0.35355339);
+        tf2::Quaternion q_back(0.0, 0.2588, 0.0, 0.9659);
         T_imu_back_base_.setRotation(q_back);
-        T_imu_back_base_.setOrigin(tf2::Vector3(0.0, 0.2309, -0.0399));
+        T_imu_back_base_.setOrigin(tf2::Vector3(0.0399, 0.0, -0.2309));
 
         // --- Conversion to User FRD frame (X=Forward, Y=Right, Z=Down) ---
         // OpenVINS global is X=Left, Y=Back, Z=Up. We want X=Fwd, Y=Right, Z=Down.
