@@ -43,8 +43,9 @@ public:
         T_imu_back_base_.setOrigin(tf2::Vector3(0.0, -0.080885, -0.219904));
 
         // --- Conversion to User FRD frame (X=Forward, Y=Right, Z=Down) ---
-        // Quaternion (x, y, z, w) for R_enu_to_user (Roll=180°, Pitch=0°, Yaw=90°)
-        tf2::Quaternion q_user(0.70710678, 0.70710678, 0.0, 0.0);
+        // If OpenVINS is already Z-Down, we only need Yaw 90 to align X/Y.
+        // Quaternion (x, y, z, w) for R_enu_to_user (Roll=0°, Pitch=0°, Yaw=90°)
+        tf2::Quaternion q_user(0.0, 0.0, 0.70710678, 0.70710678);
         T_enu_to_ned_.setRotation(q_user);
         T_enu_to_ned_.setOrigin(tf2::Vector3(0, 0, 0));
 
