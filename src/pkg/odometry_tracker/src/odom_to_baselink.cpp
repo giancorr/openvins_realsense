@@ -32,12 +32,12 @@ public:
         // --- Static transform: cam0 IMU -> base_link ---
         tf2::Quaternion q_front(0.5, -0.5, 0.5, 0.5);
         T_imu_front_base_.setRotation(q_front);
-        T_imu_front_base_.setOrigin(tf2::Vector3(-0.04, 0.16, -0.13));
+        T_imu_front_base_.setOrigin(tf2::Vector3(0.04, -0.16, -0.13));
 
         // --- Static transform: cam1 IMU -> base_link ---
         tf2::Quaternion q_back(0.61237244, 0.61237244, -0.35355339, 0.35355339);
         T_imu_back_base_.setRotation(q_back);
-        T_imu_back_base_.setOrigin(tf2::Vector3(-0.04, 0.23588457, -0.04856406));
+        T_imu_back_base_.setOrigin(tf2::Vector3(0.04, -0.07588457, -0.22856406));
 
         // --- Conversion to User FRD frame (X=Forward, Y=Right, Z=Down) ---
         // Quaternion (x, y, z, w) for R_enu_to_user (Roll=180°, Pitch=0°, Yaw=90°)
