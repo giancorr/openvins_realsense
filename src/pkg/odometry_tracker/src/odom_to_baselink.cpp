@@ -37,10 +37,10 @@ public:
         T_imu_front_base_.setOrigin(tf2::Vector3(0.0, -0.19, -0.13));
 
         // --- Static transform: cam1 IMU -> base_link ---
-        // cam1 at (-0.15, +0.04, +0.18) in base_link NED; 180 deg yaw + 30 deg pitch down
+        // cam1 at (-0.15, +0.0, +0.18) in base_link NED; 180 deg yaw + 30 deg pitch down
         tf2::Quaternion q_back(-0.35355339, 0.35355339, 0.61237244, 0.61237244);
         T_imu_back_base_.setRotation(q_back);
-        T_imu_back_base_.setOrigin(tf2::Vector3(0.04, -0.080885, -0.219904));
+        T_imu_back_base_.setOrigin(tf2::Vector3(0.0, -0.080885, -0.219904));
 
         // --- Conversion to User FRD frame (X=Forward, Y=Right, Z=Down) ---
         // Quaternion (x, y, z, w) for R_enu_to_user (Roll=180°, Pitch=0°, Yaw=90°)
@@ -111,19 +111,24 @@ private:
 
     void publish_static_map(const tf2::Transform& T_init, const builtin_interfaces::msg::Time& stamp)
     {
+        // T_map_base = T_init^-1 * T_enu_to_ned * T_global_base
+        // We want TF tree: T_map_global = T_init^-1 * T_enu_to_ned
+        // So T_global_map = T_enu_to_ned^-1 * T_init
+        tf2::Transform T_global_map = T_enu_to_ned_.inverse() * T_init;
+
         geometry_msgs::msg::TransformStamped t;
         t.header.stamp = stamp;
         t.header.frame_id = "global";
         t.child_frame_id = "map";
         
-        t.transform.translation.x = T_init.getOrigin().x();
-        t.transform.translation.y = T_init.getOrigin().y();
-        t.transform.translation.z = T_init.getOrigin().z();
+        t.transform.translation.x = T_global_map.getOrigin().x();
+        t.transform.translation.y = T_global_map.getOrigin().y();
+        t.transform.translation.z = T_global_map.getOrigin().z();
         
-        t.transform.rotation.x = T_init.getRotation().x();
-        t.transform.rotation.y = T_init.getRotation().y();
-        t.transform.rotation.z = T_init.getRotation().z();
-        t.transform.rotation.w = T_init.getRotation().w();
+        t.transform.rotation.x = T_global_map.getRotation().x();
+        t.transform.rotation.y = T_global_map.getRotation().y();
+        t.transform.rotation.z = T_global_map.getRotation().z();
+        t.transform.rotation.w = T_global_map.getRotation().w();
         
         tf_static_broadcaster_->sendTransform(t);
     }

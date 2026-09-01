@@ -20,9 +20,9 @@ def generate_launch_description():
             {"config_path": ov_config_path},
         ],
         remappings=[
-            ('/t265/fisheye1/image_raw', '/cam0/fisheye1/image_raw'),
-            ('/t265/fisheye2/image_raw', '/cam1/fisheye1/image_raw'),
-            ('/t265/imu', '/cam0/imu')
+            ('/t265/fisheye1/image_raw', '/cam1/fisheye1/image_raw'),
+            ('/t265/fisheye2/image_raw', '/cam1/fisheye2/image_raw'),
+            ('/t265/imu', '/cam1/imu')
         ]
     )
 

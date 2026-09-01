@@ -33,9 +33,9 @@ windows:
   - window_name: drivers
     layout: tiled
     panes:
-      # --- [Pane 1] Back Camera Driver (cam0 alias) ---
+      # --- [Pane 1] Back Camera Driver (cam1 alias) ---
       - shell_command:
-          - ros2 launch realsense2_camera rs_launch.py camera_name:=cam0 serial_no:="'146322110430'" enable_fisheye1:=true enable_fisheye2:=true enable_pose:=false enable_gyro:=true enable_accel:=true unite_imu_method:="2" publish_tf:=false tf_publish_rate:=0.0
+          - ros2 launch realsense2_camera rs_launch.py camera_name:=cam1 serial_no:="'146322110430'" enable_fisheye1:=true enable_fisheye2:=true enable_pose:=false enable_gyro:=true enable_accel:=true unite_imu_method:="2" publish_tf:=false tf_publish_rate:=0.0
 
       # --- [Pane 2] Debug Terminal ---
       - shell_command:
@@ -43,4 +43,4 @@ windows:
 
       # --- [Pane 3] Static TF Tree ---
       - shell_command:
-          - ros2 run tf2_ros static_transform_publisher 0.04 -0.080885 -0.219904 -0.35355339 0.35355339 0.61237244 0.61237244 imu base_link & ros2 run tf2_ros static_transform_publisher 0.13 -0.04 0.19 0.5 0.5 0.5 0.5 base_link cam0_link & ros2 run tf2_ros static_transform_publisher -0.15 0.04 0.18 -0.35355339 0.35355339 0.61237244 -0.61237244 base_link cam1_link
+          - ros2 run tf2_ros static_transform_publisher 0.0 -0.080885 -0.219904 -0.35355339 0.35355339 0.61237244 0.61237244 imu base_link & ros2 run tf2_ros static_transform_publisher 0.13 -0.04 0.19 0.5 0.5 0.5 0.5 base_link cam0_link & ros2 run tf2_ros static_transform_publisher -0.15 0.04 0.18 -0.35355339 0.35355339 0.61237244 -0.61237244 base_link cam1_link
