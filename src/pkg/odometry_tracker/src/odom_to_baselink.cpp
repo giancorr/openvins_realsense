@@ -43,9 +43,10 @@ public:
         T_imu_back_base_.setOrigin(tf2::Vector3(0.0, -0.080885, -0.219904));
 
         // --- Conversion to User FRD frame (X=Forward, Y=Right, Z=Down) ---
-        // If OpenVINS is already Z-Down, we only need Yaw 90 to align X/Y.
-        // Quaternion (x, y, z, w) for R_enu_to_user (Roll=0°, Pitch=0°, Yaw=90°)
-        tf2::Quaternion q_user(0.0, 0.0, 0.70710678, 0.70710678);
+        // OpenVINS global is X=Left, Y=Back, Z=Up. We want X=Fwd, Y=Right, Z=Down.
+        // This requires Roll=180, Yaw=-90.
+        // Quaternion (x, y, z, w) for R_enu_to_user
+        tf2::Quaternion q_user(0.70710678, -0.70710678, 0.0, 0.0);
         T_enu_to_ned_.setRotation(q_user);
         T_enu_to_ned_.setOrigin(tf2::Vector3(0, 0, 0));
 
@@ -87,12 +88,15 @@ private:
         tf2::Matrix3x3 m(T_user_base.getRotation());
         double roll, pitch, yaw;
         m.getRPY(roll, pitch, yaw);
-
-        tf2::Quaternion q_yaw;
-        q_yaw.setRPY(0.0, 0.0, yaw);
-
+        
+        // Per avere la base_link perfettamente dritta all'avvio anche se c'è un errore di montaggio
+        // o se l'IMU rileva un pitch di 30 gradi, usiamo l'intera rotazione (roll, pitch, yaw)
+        // come zero iniziale.
+        tf2::Quaternion q_init;
+        q_init.setRPY(roll, pitch, yaw);
+        
         if (session_type == "front") {
-            T_init_front_.setRotation(q_yaw);
+            T_init_front_.setRotation(q_init);
             T_init_front_.setOrigin(T_user_base.getOrigin());
             if (!static_map_published_) {
                 publish_static_map(T_init_front_, out_msg.header.stamp);
@@ -100,7 +104,7 @@ private:
             }
             RCLCPP_INFO(this->get_logger(), "Zeroing complete for FRONT session.");
         } else {
-            T_init_back_.setRotation(q_yaw);
+            T_init_back_.setRotation(q_init);
             T_init_back_.setOrigin(T_user_base.getOrigin());
             if (!static_map_published_) {
                 publish_static_map(T_init_back_, out_msg.header.stamp);
