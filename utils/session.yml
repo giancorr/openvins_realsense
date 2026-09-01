@@ -1,10 +1,13 @@
 session_name: vio_stack
 environment:
   ROS_DOMAIN_ID: "23"
+  DISPLAY: ":0"
+  XDG_RUNTIME_DIR: "/tmp/runtime-root"
 options:
   mouse: 'on'
 
 shell_command_before:
+  - mkdir -p /tmp/runtime-root && chmod 0700 /tmp/runtime-root
   - source /root/ros2_ws/install/setup.bash
 
 windows:
@@ -43,4 +46,4 @@ windows:
 
       # --- [Pane 3] Static TF Tree ---
       - shell_command:
-          - ros2 run tf2_ros static_transform_publisher 0.04 -0.16 -0.13 0.5 -0.5 0.5 0.5 imu base_link & ros2 run tf2_ros static_transform_publisher 0.13 0 0.16 0.5 0.5 0.5 0.5 base_link cam0_link & ros2 run tf2_ros static_transform_publisher -0.16 0 0.19 0.61237244 0.61237244 -0.35355339 0.35355339 base_link cam1_link
+          - ros2 run tf2_ros static_transform_publisher 0.04 -0.16 -0.13 0.5 -0.5 0.5 0.5 imu base_link & ros2 run tf2_ros static_transform_publisher 0.13 0.04 -0.16 0.5 -0.5 0.5 -0.5 base_link cam0_link & ros2 run tf2_ros static_transform_publisher -0.16 -0.04 -0.18 0.61237244 0.61237244 -0.35355339 -0.35355339 base_link cam1_link
