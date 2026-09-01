@@ -1,8 +1,6 @@
 session_name: vio_stack
 environment:
   ROS_DOMAIN_ID: "23"
-  DISPLAY: ":0"
-  XDG_RUNTIME_DIR: "/run/user/1000"
 options:
   mouse: 'on'
 
