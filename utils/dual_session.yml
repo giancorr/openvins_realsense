@@ -1,13 +1,10 @@
 session_name: vio_dual_stack
 environment:
   ROS_DOMAIN_ID: "23"
-  DISPLAY: ":0"
-  XDG_RUNTIME_DIR: "/tmp/runtime-root"
 options:
   mouse: 'on'
 
 shell_command_before:
-  - mkdir -p /tmp/runtime-root && chmod 0700 /tmp/runtime-root
   - source /root/ros2_ws/install/setup.bash
 
 windows:
