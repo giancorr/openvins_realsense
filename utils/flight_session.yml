@@ -49,4 +49,4 @@ windows:
       # --- [Pane 4] PX4 Bridge & TF Pub ---
       - shell_command:
           - sleep 10
-          - MicroXRCEAgent serial --dev /dev/ttyUSB0 -b 921600 & ros2 run drone_odometry px4_tf_pub --ros-args -p is_already_ned:=true
+          - MicroXRCEAgent serial --dev /dev/ttyUSB0 -b 921600 & python3 utils/simple_vio_bridge.py
