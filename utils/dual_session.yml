@@ -29,7 +29,7 @@ windows:
       # --- [Pane 4] Path Publisher (Fused base_link) ---
       - shell_command:
           - sleep 8
-          - ros2 run odometry_tracker base_link_path_pub
+          - ros2 run odometry_tracker base_link_path_pub --ros-args -p odom_topic:=/odometry/filtered
 
   - window_name: drivers
     layout: tiled
