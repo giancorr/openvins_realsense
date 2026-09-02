@@ -67,6 +67,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libfcl-dev \
     && rm -rf /var/lib/apt/lists/*
 
+
+
 # 8.5 Install Micro-XRCE-DDS-Agent
 WORKDIR /root
 RUN git clone https://github.com/eProsima/Micro-XRCE-DDS-Agent.git && \
@@ -89,6 +91,26 @@ RUN echo "source /opt/ros/humble/setup.bash" >> ~/.bashrc && \
 
 RUN echo "#!/bin/bash\nset -e\nsource /opt/ros/humble/setup.bash\nsource /root/ros2_ws/install/setup.bash\nexec \"\$@\"" > /entrypoint.sh && \
     chmod +x /entrypoint.sh
+
+# Extra dependencies merged from uav_motion_stack
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ros-humble-navigation2 \
+    ros-humble-nav2-bringup \
+    ros-humble-tf-transformations \
+    ros-humble-octomap-rviz-plugins \
+    ros-humble-rtabmap-ros \
+    ros-humble-rmw-cyclonedds-cpp \
+    ros-humble-sophus* \
+    ros-humble-topic-tools \
+    ros-humble-grid-map-core \
+    ros-humble-mavros \
+    ros-humble-mavros-extras \
+    ros-humble-mavros-msgs \
+    libboost-thread-dev \
+    libboost-system-dev \
+    libboost-filesystem-dev \
+    libboost-program-options-dev \
+    && rm -rf /var/lib/apt/lists/*
 
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["bash"]
