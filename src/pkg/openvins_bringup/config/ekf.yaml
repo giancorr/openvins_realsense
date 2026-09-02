@@ -20,7 +20,7 @@
     publish_tf: true
 
     # --- Front odometry (cam0 + cam0 IMU) ---
-    # Both sources are zeroed to the same origin by odom_to_baselink, so absolute pose is safe.
+    # Front is the primary source: well calibrated, use absolute pose + velocity.
     odom0: /front/base_link_odom
     odom0_config: [true,  true,  true,   # x, y, z
                    true,  true,  true,   # roll, pitch, yaw
@@ -32,9 +32,11 @@
     odom0_queue_size: 10
 
     # --- Back odometry (cam1 + cam1 IMU) ---
+    # Back is secondary: approximate calibration, use velocity only to avoid
+    # conflicting absolute poses that cause orientation noise.
     odom1: /back/base_link_odom
-    odom1_config: [true,  true,  true,   # x, y, z
-                   true,  true,  true,   # roll, pitch, yaw
+    odom1_config: [false, false, false,  # x, y, z (no absolute pose from back)
+                   false, false, false,  # roll, pitch, yaw
                    true,  true,  true,   # vx, vy, vz
                    true,  true,  true,   # vroll, vpitch, vyaw
                    false, false, false]
