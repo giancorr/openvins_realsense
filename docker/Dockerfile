@@ -71,7 +71,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # 8.5 Install Micro-XRCE-DDS-Agent
 WORKDIR /root
-RUN git clone https://github.com/eProsima/Micro-XRCE-DDS-Agent.git && \
+RUN git clone --depth 1 --recurse-submodules --shallow-submodules https://github.com/eProsima/Micro-XRCE-DDS-Agent.git && \
     cd Micro-XRCE-DDS-Agent && \
     mkdir build && cd build && \
     cmake .. && \
