@@ -19,7 +19,7 @@ windows:
       # --- [Pane 2] RViz2 Visualization ---
       - shell_command:
           - sleep 5
-          - ros2 run rviz2 rviz2 -d $(ros2 pkg prefix openvins_bringup)/share/openvins_bringup/config/single.rviz
+          - ros2 run rviz2 rviz2 -d $(ros2 pkg prefix openvins_bringup)/share/openvins_bringup/config/flight.rviz
 
       # --- [Pane 3] Odom to Baselink Converter & EKF Fusion ---
       - shell_command:
@@ -55,3 +55,7 @@ windows:
       - shell_command:
           - sleep 12
           - python3 /run_config/utils/simple_vio_bridge.py
+      
+      - shell_command:
+          - sleep 5
+          
