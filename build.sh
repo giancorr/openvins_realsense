@@ -3,4 +3,4 @@
 set -e
 
 # Build the docker image
-docker build --network host -t openvins_realsense_humble -f docker/Dockerfile .
+docker build -t openvins_realsense_humble -f docker/Dockerfile .
