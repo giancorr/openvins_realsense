@@ -54,6 +54,16 @@ Visualization Manager:
           Value: false
         cam0_gyro_optical_frame:
           Value: false
+        cam0_pose_frame:
+          Value: false
+        cam0_fisheye1_frame:
+          Value: false
+        cam0_fisheye1_optical_frame:
+          Value: false
+        cam0_fisheye2_frame:
+          Value: false
+        cam0_fisheye2_optical_frame:
+          Value: false
         cam1_accel_frame:
           Value: false
         cam1_accel_optical_frame:
@@ -61,6 +71,16 @@ Visualization Manager:
         cam1_gyro_frame:
           Value: false
         cam1_gyro_optical_frame:
+          Value: false
+        cam1_pose_frame:
+          Value: false
+        cam1_fisheye1_frame:
+          Value: false
+        cam1_fisheye1_optical_frame:
+          Value: false
+        cam1_fisheye2_frame:
+          Value: false
+        cam1_fisheye2_optical_frame:
           Value: false
       Marker Scale: 0.5
       Name: TF Frames

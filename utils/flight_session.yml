@@ -26,6 +26,10 @@ windows:
           - sleep 6
           - ros2 launch odometry_tracker odometry_tracker.launch.py
 
+      # --- [Pane 5] Empty Pane ---
+      - shell_command:
+          - sleep 5
+
   - window_name: drivers
     layout: tiled
     panes:
@@ -45,4 +49,4 @@ windows:
       - shell_command:
           - sleep 10
           - MicroXRCEAgent serial --dev /dev/ttyUSB0 -b 921600
-
+          
