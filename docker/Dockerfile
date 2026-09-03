@@ -81,7 +81,7 @@ RUN git clone --depth 1 --recurse-submodules --shallow-submodules https://github
 
 # 8.6 Clone and build px4_msgs
 WORKDIR /root/ros2_ws/src
-RUN git clone --branch release/1.14 https://github.com/PX4/px4_msgs.git
+RUN git clone --branch 1.14 https://github.com/prisma-lab/px4_msgs.git
 WORKDIR /root/ros2_ws
 RUN /bin/bash -c "source /opt/ros/humble/setup.bash && colcon build --packages-select px4_msgs"
 
