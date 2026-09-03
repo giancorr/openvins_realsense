@@ -46,9 +46,25 @@ Visualization Manager:
           Value: true
         cam1_link:
           Value: true
+        cam0_accel_frame:
+          Value: false
+        cam0_accel_optical_frame:
+          Value: false
+        cam0_gyro_frame:
+          Value: false
+        cam0_gyro_optical_frame:
+          Value: false
+        cam1_accel_frame:
+          Value: false
+        cam1_accel_optical_frame:
+          Value: false
+        cam1_gyro_frame:
+          Value: false
+        cam1_gyro_optical_frame:
+          Value: false
       Marker Scale: 0.5
       Name: TF Frames
-      Show Arrows: true
+      Show Arrows: false
       Show Axes: true
       Show Names: true
       Update Interval: 0
@@ -75,6 +91,30 @@ Visualization Manager:
       Shaft Diameter: 0.1
       Shaft Length: 0.1
       Topic: /base_link_path
+      Unreliable: false
+      Value: true
+
+    - Class: rviz_default_plugins/Image
+      Enabled: true
+      Max Value: 1
+      Median window: 5
+      Min Value: 0
+      Name: Cam0 Image
+      Normalize Range: true
+      Queue Size: 10
+      Topic: /cam0/fisheye1/image_raw
+      Unreliable: false
+      Value: true
+
+    - Class: rviz_default_plugins/Image
+      Enabled: true
+      Max Value: 1
+      Median window: 5
+      Min Value: 0
+      Name: Cam1 Image
+      Normalize Range: true
+      Queue Size: 10
+      Topic: /cam1/fisheye1/image_raw
       Unreliable: false
       Value: true
 
