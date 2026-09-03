@@ -20,6 +20,7 @@ echo ""
 # Run the docker container
 docker run -it --rm \
     --privileged \
+    --ipc=host \
     -v /dev:/dev \
     -v /run/udev:/run/udev:ro \
     -e DISPLAY=$DISPLAY \
