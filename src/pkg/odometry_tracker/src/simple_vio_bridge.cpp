@@ -6,7 +6,7 @@ class VioBridge : public rclcpp::Node {
 public:
     VioBridge() : Node("simple_vio_bridge") {
         odom_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
-            "/base_link_pose", 10,
+            "/odometry/filtered", 10,
             std::bind(&VioBridge::odom_callback, this, std::placeholders::_1)
         );
 
