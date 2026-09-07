@@ -30,11 +30,11 @@ public:
         tf_static_broadcaster_ = std::make_shared<tf2_ros::StaticTransformBroadcaster>(this);
 
         // --- Static transform: cam0 IMU -> base_link ---
-        // cam0 at (+0.13, 0, +0.19) in base_link NED; lens 4cm left of IMU (-Y)
+        // cam0 at (+0.13, 0, +0.165) in base_link NED; lens 4cm left of IMU (-Y)
         // Camera points forward: +Z_cam = +X_base, +X_cam = +Y_base, +Y_cam = +Z_base
         tf2::Quaternion q_front(-0.5, 0.5, -0.5, -0.5);
         T_imu_front_base_.setRotation(q_front);
-        T_imu_front_base_.setOrigin(tf2::Vector3(0.0, 0.19, -0.13));
+        T_imu_front_base_.setOrigin(tf2::Vector3(0.0, 0.165, -0.13));
 
         // --- Static transform: cam1 IMU -> base_link ---
         // cam1 at (-0.15, +0.0, +0.18) in base_link NED; 180 deg yaw + 30 deg pitch down

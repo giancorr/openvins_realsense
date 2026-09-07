@@ -21,8 +21,13 @@ ament_target_dependencies(base_link_path_pub
 
 # Node 2: odom_to_baselink — transforms IMU odometries to base_link
 add_executable(odom_to_baselink src/odom_to_baselink.cpp)
-ament_target_dependencies(odom_to_baselink
-  rclcpp nav_msgs geometry_msgs tf2 tf2_ros tf2_geometry_msgs)
+ament_target_dependencies(odom_to_baselink rclcpp nav_msgs tf2 tf2_geometry_msgs tf2_ros)
+
+add_executable(odom_to_baselink_enu src/odom_to_baselink_enu.cpp)
+ament_target_dependencies(odom_to_baselink_enu rclcpp nav_msgs tf2 tf2_geometry_msgs tf2_ros)
+
+add_executable(odom_to_baselink_enu_direct src/odom_to_baselink_enu_direct.cpp)
+ament_target_dependencies(odom_to_baselink_enu_direct rclcpp nav_msgs tf2 tf2_geometry_msgs tf2_ros)
 
 # Node 3: simple_vio_bridge — bridges OpenVINS odometry to PX4
 add_executable(simple_vio_bridge src/simple_vio_bridge.cpp)
@@ -32,6 +37,8 @@ ament_target_dependencies(simple_vio_bridge
 install(TARGETS
   base_link_path_pub
   odom_to_baselink
+  odom_to_baselink_enu
+  odom_to_baselink_enu_direct
   simple_vio_bridge
   DESTINATION lib/${PROJECT_NAME})
 
